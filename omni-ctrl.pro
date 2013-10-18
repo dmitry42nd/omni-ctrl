@@ -4,7 +4,6 @@ TRIKCONTROL_DIR = ../trikRuntime/trikControl
 QT       += core
 QT       += network
 QT       -= gui
-
 TARGET = omni-ctrl
 CONFIG   += console
 CONFIG   -= app_bundle
