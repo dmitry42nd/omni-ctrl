@@ -1,10 +1,10 @@
-#include <QtCore/QCoreApplication>
+#include <QtGui/QApplication>
 #include "omnirobot.h"
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
-    OmniRobot robot;
+    QApplication a(argc, argv);
+    OmniRobot robot(a.thread());
 
     return a.exec();
 }

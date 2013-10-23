@@ -1,9 +1,9 @@
-TRIKCONTROL_BINDIR = ../trikRuntime/trikControl/bin/release
+TRIKCONTROL_BINDIR = ../trikRuntime/bin/release
 TRIKCONTROL_DIR = ../trikRuntime/trikControl
 
 QT       += core
 QT       += network
-QT       -= gui
+QT       += gui
 TARGET = omni-ctrl
 CONFIG   += console
 CONFIG   -= app_bundle
