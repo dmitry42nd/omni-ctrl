@@ -3,13 +3,8 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-  #include <errno.h>
-#include <termios.h>
-#include <netdb.h>
+
+#include <errno.h>
 #include <linux/input.h>
 
 #include "cmd_fifo.h"

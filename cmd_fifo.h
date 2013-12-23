@@ -1,9 +1,6 @@
 #pragma once
 
 #include <QObject>
-#include <QPointer>
-#include <QTimer>
-#include <QSocketNotifier>
 #include <trikControl/brick.h>
 
 

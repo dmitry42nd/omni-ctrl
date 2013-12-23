@@ -5,15 +5,8 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <errno.h>
-#include <termios.h>
-#include <netdb.h>
 #include <linux/input.h>
-
 //#include <assert>
 
 static const int max_fifo_input_size = 32;
@@ -29,7 +22,7 @@ logFifo::~logFifo()
 
 void logFifo::openFifo()
 {
-  m_fifoFd = open(m_fifoPath.toLocal8Bit().data(), /*O_SYNC,*/ O_RDONLY|O_NONBLOCK);
+  m_fifoFd = open(m_fifoPath.toLocal8Bit().data(), O_RDONLY|O_NONBLOCK);
   if (m_fifoFd < 0)
   {
     qDebug() << m_fifoPath << ": fifo open failed: " << errno;
@@ -37,7 +30,7 @@ void logFifo::openFifo()
     return;
   }
   
-  m_fifoNotifier = new QSocketNotifier(m_fifoFd, QSocketNotifier::Read, this);
+  m_fifoNotifier = new QSocketNotifier(m_fifoFd, QSocketNotifier::Read);
   connect(m_fifoNotifier, SIGNAL(activated(int)), this, SLOT(readFifo()));
   m_fifoNotifier->setEnabled(true);
 

@@ -1,9 +1,9 @@
 #include <QDebug>
-#include <QStringList>
+//#include <QStringList>
 
 #include "omnirobot.h"
-#include <QVector2D>
-#include <cmath>
+
+//#include <cmath>
 
 
 const qreal gyroConvConst = 838.736454707;
@@ -36,6 +36,12 @@ OmniRobot::OmniRobot(QThread *guiThread, QString configPath):
   qDebug() << "OMNI_STARTS";
 
   init();
+
+  //a bit of SciFi to speed up logFifo.readFifio() (A long time ago in a galaxy far, far away QSocketNotifier appeared...)
+  guiThread->connect(&m_logFifo, SIGNAL(finished()), guiThread, SLOT(quit()));
+  m_logFifo.moveToThread(&m_logFifo);
+  m_logFifo.start();  
+
   m_logFifo.openFifo();
   m_cmdFifo.openFifo();
   connect(&m_logFifo, SIGNAL(fifoRead(QString)), this, SLOT(parseLogFifo(QString)));
@@ -121,8 +127,8 @@ void OmniRobot::gamepadButton(int button, int pressed)
   switch (omniState)
   {
   case INIT_MODE:
-    omniState = CONTROL_MODE;
     qDebug() << "CONTROL_MODE";
+    omniState = CONTROL_MODE;
 
     switch (button)
     {
@@ -148,8 +154,8 @@ void OmniRobot::gamepadButton(int button, int pressed)
 
     break;
   case CONTROL_MODE:
-    omniState = INIT_MODE;
     qDebug() << "INIT_MODE";
+    omniState = INIT_MODE;
 
     init();
     brick.stop();
@@ -178,9 +184,9 @@ void OmniRobot::getButton(int code, int value)
     case 62:  
       if(movementMode != LINE_TRACE_MODE)
       {
-        movementMode = LINE_TRACE_MODE; 
-        omniState = CONTROL_MODE;
         qDebug() << "CONTROL_MODE";
+        omniState    = CONTROL_MODE;
+        movementMode = LINE_TRACE_MODE; 
         period       = 30; 
 
         startControl();
@@ -237,12 +243,13 @@ void OmniRobot::lineTracerMode()
   int I = (m_prevTgtX + m_tgtX)*IK;
   int D = (m_prevTgtX - m_tgtX)*DK;
   int yaw = P + I + D;
-
+/*
   pwm.setX(0);
   pwm.setY(-speed+yaw);
   pwm.setZ(speed-yaw);
+*/
 
-  pwm += (strafe(m_tgtX)/* + rotate(m_tgtY)*/)*Dw;
+  pwm = strafe(m_tgtX)*Dw;//;(strafe(m_tgtX) + rotate(m_tgtY))*Dw;
   brickPower();
 }
 

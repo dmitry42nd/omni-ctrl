@@ -2,14 +2,13 @@
 
 #include <QObject>
 #include <QPointer>
-#include <QTimer>
 #include <QSocketNotifier>
 #include <trikControl/brick.h>
 
 
 using namespace trikControl;
 
-class logFifo : public QObject
+class logFifo : public QThread
 {
     Q_OBJECT
 public:

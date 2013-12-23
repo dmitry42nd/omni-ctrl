@@ -1,10 +1,15 @@
 #pragma once
 
+
 #include <QObject>
 #include <QTimer>
 #include <QMatrix3x3>
+#include <QVector2D>
 #include <QVector3D>
 #include <QStringList>
+
+#include <cmath>
+
 #include <trikControl/brick.h>
 #include "log_fifo.h"
 #include "cmd_fifo.h"
