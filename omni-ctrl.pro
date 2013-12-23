@@ -1,6 +1,5 @@
 TRIKCONTROL_BINDIR = ../trikRuntime/bin/release
 TRIKCONTROL_DIR = ../trikRuntime/trikControl
-BOOST_DIR = ../../Downloads/boost_1_54_0
 
 QT       += core
 QT       += network
@@ -23,7 +22,11 @@ LIBS += -L$$TRIKCONTROL_BINDIR -ltrikControl
 }
 
 SOURCES += main.cpp \
-    omnirobot.cpp
+           omnirobot.cpp \
+           log_fifo.cpp \
+           cmd_fifo.cpp
 
 HEADERS += \
-    omnirobot.h
+           omnirobot.h \
+           log_fifo.h \
+           cmd_fifo.h

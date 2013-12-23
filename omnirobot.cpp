@@ -1,210 +1,340 @@
 #include <QDebug>
+#include <QStringList>
 
 #include "omnirobot.h"
-
+#include <QVector2D>
 #include <cmath>
-#include <linux/input.h>
 
-const float gyroConvConst = 838.736454707;
-#define rt_SATURATE(sig,ll,ul)         (((sig) >= (ul)) ? (ul) : (((sig) <= (ll)) ? (ll) : (sig)) )
-const float c1 = sqrt(2) * 0.5;
 
-OmniRobot::OmniRobot(QThread *guiThread):
-    brick(*guiThread),
-    Mt(4,3),
-    cmd(3),
-    pwm(4)
+const qreal gyroConvConst = 838.736454707;
+const QString logFifoPath="/tmp/dsp-detector.out.fifo";
+const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
+
+const qreal c1 = sqrt(3) * 0.5;
+const qreal c2 = 0.5;
+
+const int speed = 80;
+const qreal stopK = 1;
+const qreal PK = 0.42;
+const qreal IK = 0.006;
+const qreal DK = -0.009;
+
+#define rt_SATURATE(sig,ll,ul)     (((sig) >= (ul)) ? (ul) : (((sig) <= (ll)) ? (ll) : (sig)) )
+
+OmniRobot::OmniRobot(QThread *guiThread, QString configPath):
+  brick(*guiThread, configPath),
+  m_logFifo(logFifoPath),
+  m_cmdFifo(cmdFifoPath),
+  gyrolast(0),
+  alpha(0.0),
+  Mt(),
+  cmd(),
+  gyroCntr(0),
+  gyroError(0),
+  m_logStruct()
 {
-    qDebug() << "INIT_MODE";
+  qDebug() << "OMNI_STARTS";
 
-    init();
-    connect(brick.gamepad(), SIGNAL(trikGamepad_button(int,int)), this, SLOT(gamepadButton(int, int)));
-    connect(brick.gamepad(), SIGNAL(trikGamepad_pad(int,int,int)), this, SLOT(gamepadPad(int,int,int)));
-    connect(brick.gamepad(), SIGNAL(trikGamepad_padUp(int)), this, SLOT(gamepadPadUp(int)));
+  init();
+  m_logFifo.openFifo();
+  m_cmdFifo.openFifo();
+  connect(&m_logFifo, SIGNAL(fifoRead(QString)), this, SLOT(parseLogFifo(QString)));
 
-    connect(brick.keys(), SIGNAL(buttonPressed(int,int)), this, SLOT(getButton(int,int)));
+  connect(brick.gamepad(), SIGNAL(button(int,int)),        this, SLOT(gamepadButton(int, int)));
+  connect(brick.gamepad(), SIGNAL(pad(int,int,int)),       this, SLOT(gamepadPad(int,int,int)));
+  connect(brick.gamepad(), SIGNAL(padUp(int)),             this, SLOT(gamepadPadUp(int)));
+  connect(brick.keys(),    SIGNAL(buttonPressed(int,int)), this, SLOT(getButton(int,int)));
+
+  qDebug() << "GyroError accumulating. Don't tuch robot!";
+  period = 4;
+  connect(&timer, SIGNAL(timeout()), this, SLOT(accumGyroError()));
+  timer.start(period);
+}
+
+OmniRobot::~OmniRobot()
+{
+  disconnect(&m_logFifo, SIGNAL(fifoRead(QString)), this, SLOT(parseLogFifo(QString)));
+}
+
+void::OmniRobot::accumGyroError()
+{
+  gyroError += (brick.gyroscope()->read()[2]);
+  ++gyroCntr;
 }
 
 void OmniRobot::init()
 {
-    period = 200;
-    xw = 75.0; //mm
-    yw = 75.0; //mm
-    Dw = 50.0; //mm
+  period = 1000;
+  xw = 110.0; //mm
+  yw = 110.0; //mm
+  Dw = 0.02 * 2.0 * 20.0; // 1/50mm
 
-    vector<float> u1 (2); u1(0) =  c1; u1(1) =  c1;
-    vector<float> u2 (2); u2(0) =  c1; u2(1) = -c1;
-    vector<float> u3 (2); u3(0) =  c1; u3(1) =  c1;
-    vector<float> u4 (2); u4(0) =  c1; u4(1) = -c1;
+  QVector2D u1(0.0, 1.0);
+  QVector2D u2(c1, -c2);
+  QVector2D u3(-1.0, 0.0);
 
-    vector<float> n1 (2); n1(0) =  c1; n1(1) = -c1;
-    vector<float> n2 (2); n2(0) = -c1; n2(1) = -c1;
-    vector<float> n3 (2); n3(0) =  c1; n3(1) = -c1;
-    vector<float> n4 (2); n4(0) = -c1; n4(1) = -c1;
+  QVector2D n1(-1.0, 0.0);
+  QVector2D n2(c2, c1);
+  QVector2D n3(c1, -c2);
 
-    vector<float> b1 (2); b1(0) =  xw; b1(1) =  yw;
-    vector<float> b2 (2); b2(0) =  xw; b2(1) = -yw;
-    vector<float> b3 (2); b3(0) = -xw; b3(1) = -yw;
-    vector<float> b4 (2); b4(0) = -xw; b4(1) =  yw;
+  QVector2D b1(0.0, yw);
+  QVector2D b2(c1*xw, -c2*yw);
+  QVector2D b3(-c1*xw, -c2*yw);
 
-    Mt(0,0) = n1(0); Mt(0,1) = n1(1); Mt(0,2) = b1(0)*u1(0) + b1(1)*u1(1);
-    Mt(1,0) = n2(0); Mt(1,1) = n2(1); Mt(1,2) = b2(0)*u2(0) + b2(1)*u2(1);
-    Mt(2,0) = n3(0); Mt(2,1) = n3(1); Mt(2,2) = b3(0)*u3(0) + b3(1)*u3(1);
-    Mt(3,0) = n4(0); Mt(3,1) = n3(1); Mt(3,2) = b4(0)*u4(0) + b4(1)*u4(1);
+  Mt(0,0) = n1.x(); Mt(0,1) = n1.y(); Mt(0,2) = b1.x()*u1.x() + b1.y()*u1.y();
+  Mt(1,0) = n2.x(); Mt(1,1) = n2.y(); Mt(1,2) = b2.x()*u2.x() + b2.y()*u3.y();
+  Mt(2,0) = n3.x(); Mt(2,1) = n3.y(); Mt(2,2) = b3.x()*u3.x() + b3.y()*u3.y();
 
-    Mt = -1 * Mt;
+  Mt *= -1.0;
 
-    cmd(0) = 0.0; cmd(1) = 0.0; cmd(2) = 0.0;
-    pwm(0) = 0.0; pwm(1) = 0.0; pwm(2) = 0.0; pwm(3) = 0.0;
+  pwm.setX(0.0); pwm.setY(0.0); pwm.setZ(0.0);
+  cmd.setX(0.0); cmd.setY(0.0); cmd.setZ(0.0);
 
-    omniState = INIT_MODE;
-    movementMode = ROTATE_MODE;
-    power = 20;
-    pplus = 1;
+  omniState = INIT_MODE;
+  movementMode = ROTATE_MODE;
+
+//  gyroerror = brick.gyroscope()->read()[2];
 }
-
+/*
+void OmniRobot::computeGyroError()
+{
+    gyroError += brick.gyroscope()->read()[2];
+    ++gyroCntr;
+}
+*/
 void OmniRobot::gamepadPad(int pad, int vx, int vy)
 {
-    if (pad != 1) return;
-    cmd(0) = vx;
-    cmd(1) = vy;
+  if (pad != 1) return;
+  cmd.setX((qreal)vx);
+  cmd.setY((qreal)vy);
 }
 
 void OmniRobot::gamepadPadUp(int pad)
 {
-    if (pad != 1) return;
-    cmd(0) = 0.0;
-    cmd(1) = 0.0;
-    brick.stop();
+  if (pad != 1) return;
+  cmd.setX(0.0);
+  cmd.setY(0.0);
+  brick.stop();
 }
 
 void OmniRobot::gamepadButton(int button, int pressed)
 {
-    if (pressed == 0) return;
+  if (pressed == 0) return;
 
-    switch (omniState)
+  switch (omniState)
+  {
+  case INIT_MODE:
+    omniState = CONTROL_MODE;
+    qDebug() << "CONTROL_MODE";
+
+    switch (button)
     {
-    case INIT_MODE:
-        switch (button)
-        {
-        case 1: movementMode = ROTATE_MAX_MODE; break;
-        case 2: movementMode = ROTATE_POINT_MODE; break;
-        case 3: movementMode = ROTATE_MODE; break;
-        case 5: movementMode = ANDROID_MODE; period = 10; break;
-        }
-        omniState = CONTROL_MODE;
-        startControl();
+      case 1: 
+        movementMode = ROTATE_MAX_MODE; 
         break;
-    case CONTROL_MODE:
-        qDebug() << "INIT_MODE";
-        init();
-        omniState = INIT_MODE;
-        brick.stop();
-        timer.stop();
-        disconnect(&timer, SIGNAL(timeout()), this, SLOT(omniControl()));
+      case 2: 
+        movementMode = ROTATE_POINT_MODE; 
         break;
-    default:
-        brick.stop();
-        timer.stop();
-        disconnect(&timer, SIGNAL(timeout()), this, SLOT(omniControl()));
+      case 3: 
+        movementMode = ROTATE_MODE; 
+        break;
+      case 4: 
+        movementMode = LINE_TRACE_MODE; 
+        period       = 30; 
+        break;
+      case 5: 
+        movementMode = ANDROID_MODE; 
+        period       = 20; 
+        disconnect(&timer, SIGNAL(timeout()), this, SLOT(accumGyroError()));
+        gyroError = gyroError/gyroCntr;
+        break;
     }
+    startControl();
+
+    break;
+  case CONTROL_MODE:
+    omniState = INIT_MODE;
+    qDebug() << "INIT_MODE";
+
+    init();
+    brick.stop();
+    timer.stop();
+    disconnect(&timer, SIGNAL(timeout()), this, SLOT(omniControl()));
+
+    break;
+  default:
+    brick.stop();
+    timer.stop();
+    disconnect(&timer, SIGNAL(timeout()), this, SLOT(omniControl()));
+  }
 
 }
 
 void OmniRobot::getButton(int code, int value)
 {
-    if (value != 1)
-        return;
+  if (value != 1)
+    return;
 
-    qDebug() << "INIT_MODE";
-    omniState = INIT_MODE;
-    init();
-    brick.stop();
-    timer.stop();
-    disconnect(&timer, SIGNAL(timeout()), this, SLOT(omniControl()));
+  switch (code)
+  {
+    case 64:  
+      m_cmdFifo.writeFifo("detect\n");
+      break;
+    case 62:  
+      if(movementMode != LINE_TRACE_MODE)
+      {
+        movementMode = LINE_TRACE_MODE; 
+        omniState = CONTROL_MODE;
+        qDebug() << "CONTROL_MODE";
+        period       = 30; 
+
+        startControl();
+        break;
+      }
+    default:
+      qDebug() << "INIT_MODE";
+      omniState = INIT_MODE;
+
+      init();
+      brick.stop();
+      timer.stop();
+      disconnect(&timer, SIGNAL(timeout()), this, SLOT(omniControl()));
+  }
 }
 
 void OmniRobot::startControl()
 {
-    brick.stop();
-    timer.stop();
-    qDebug() << "CONTROL_MODE";
-    connect(&timer, SIGNAL(timeout()), this, SLOT(omniControl()));
-    timer.start(period);
+  brick.stop();
+  timer.stop();
+  connect(&timer, SIGNAL(timeout()), this, SLOT(omniControl()));
+  timer.start(period);
 }
 
 void OmniRobot::omniControl()
 {
-    switch (movementMode)
-    {
-    case ROTATE_POINT_MODE:
-        rotatepoint();
-        break;
-    case ROTATE_MODE:
-        rotate();
-        break;
-    case ROTATE_MAX_MODE:
-        rotatemax();
-        break;
-    case ANDROID_MODE:
-        androidmode();
-        break;
-    default:
-        brick.stop();
-        break;
-    }
+  switch (movementMode)
+  {
+  case ROTATE_POINT_MODE:
+    break;
+  case ROTATE_MODE:
+    break;
+  case ROTATE_MAX_MODE:
+    break;
+  case LINE_TRACE_MODE:
+    lineTracerMode();
+    break;
+  case ANDROID_MODE:
+    androidmode();
+    break;
+  default:
+    brick.stop();
+    break;
+  }
+}
+
+void OmniRobot::lineTracerMode()
+{
+  qDebug() << "x    : " << m_tgtX;
+  qDebug() << "alpha: " << m_tgtY;
+
+  int speed = 50;
+  int P = m_tgtX*PK;
+  int I = (m_prevTgtX + m_tgtX)*IK;
+  int D = (m_prevTgtX - m_tgtX)*DK;
+  int yaw = P + I + D;
+
+  pwm.setX(0);
+  pwm.setY(-speed+yaw);
+  pwm.setZ(speed-yaw);
+
+  pwm += (strafe(m_tgtX)/* + rotate(m_tgtY)*/)*Dw;
+  brickPower();
+}
+
+QVector3D OmniRobot::strafe(qreal _x)
+{
+  QVector3D strafePwm = QVector3D();
+  strafePwm.setX(Mt(0,0)*_x);
+  strafePwm.setY(Mt(1,0)*_x);
+  strafePwm.setZ(Mt(2,0)*_x);
+
+  return strafePwm;
+}
+
+
+QVector3D OmniRobot::rotate(qreal _angle)
+{
+//TODO:
+  QVector3D rotatePwm = QVector3D();
+
+  rotatePwm.setX(-_angle);
+  rotatePwm.setY(-_angle);
+  rotatePwm.setZ(-_angle);
+  
+  return rotatePwm;
+}
+
+
+void OmniRobot::brickPower()
+{
+
+  int m1 = rt_SATURATE((int)pwm.x(), -100, 100);
+  int m2 = rt_SATURATE((int)pwm.y(), -100, 100);
+  int m4 = rt_SATURATE((int)pwm.z(), -100, 100);
+
+  brick.powerMotor("2")->setPower(m2);
+  brick.powerMotor("3")->setPower(m1);
+  brick.powerMotor("4")->setPower(m4);
+
+}
+
+void OmniRobot::parseLogFifo(QString _logData)
+{
+  m_logStruct = _logData.split(" ");
+
+  if(m_logStruct[0] == "loc:")
+  {
+    //assert(logStruct.length == 4)
+    m_prevTgtX = m_tgtX;
+    m_tgtX    = m_logStruct[1].toInt();
+    m_tgtY    = m_logStruct[2].toInt();
+//    m_tgtMass = m_logStruct[3].toInt();
+  }
+  else if(m_logStruct[0] == "hsv:")
+  {
+    //assert(logStruct.length == 7)
+    m_hue    = m_logStruct[1].toInt();
+    m_hueTol = m_logStruct[2].toInt();
+    m_sat    = m_logStruct[3].toInt();
+    m_satTol = m_logStruct[4].toInt();
+    m_val    = m_logStruct[5].toInt();
+    m_valTol = m_logStruct[6].toInt();
+
+    QString hsvCmd;
+    hsvCmd.sprintf("hsv %d %d %d %d %d %d\n", m_hue, m_hueTol, m_sat, m_satTol, m_val, m_valTol);
+    m_cmdFifo.writeFifo(hsvCmd);
+    emit hsvCmdParsed();
+  }
 }
 
 void OmniRobot::androidmode()
 {
-    qDebug("cmd: %f, %f, %f", cmd(0), cmd(1), cmd(2));
+  pwm.setX(Mt(0,0)*cmd.x() + Mt(0,1)*cmd.y() + Mt(0,2)*cmd.z());
+  pwm.setY(Mt(1,0)*cmd.x() + Mt(1,1)*cmd.y() + Mt(1,2)*cmd.z());
+  pwm.setZ(Mt(2,0)*cmd.x() + Mt(2,1)*cmd.y() + Mt(2,2)*cmd.z());
 
-    pwm = prod(Mt, cmd);
-    pwm = pwm * 2.0 * 25.0 / Dw;
+  pwm *= 2.0 * 20.0 * Dw ;
 
-    qDebug("pwm: %f, %f, %f, %f", pwm(0), pwm(1), pwm(2), pwm(3));
+  brickPower();
 
-    brickPower();
-}
+  float gyronew = (brick.gyroscope()->read()[2]- gyroError)/ gyroConvConst; //to rad
+  gyronew = abs(gyronew) > 0.01 ? gyronew : 0;
+  alpha += (gyronew)*period*0.001;
+  gyrolast = gyronew;
 
-void OmniRobot::brickPower()
-{
-    int m1 = rt_SATURATE((int)pwm(2), -100, 100);
-    int m2 = rt_SATURATE((int)pwm(3), -100, 100);
-    int m3 = -rt_SATURATE((int)pwm(1), -100, 100);
-    int m4 = -rt_SATURATE((int)pwm(0), -100, 100);
-    brick.powerMotor("1")->setPower(m1);
-    brick.powerMotor("2")->setPower(m2);
-    brick.powerMotor("3")->setPower(m3);
-    brick.powerMotor("4")->setPower(m4);
-}
-
-void OmniRobot::rotate()
-{
-    if (power == 20)
-        pplus = 2;
-    if (power == 100)
-        pplus = -2;
-    power = power + pplus;
-
-    brick.powerMotor("1")->setPower(power);
-    brick.powerMotor("2")->setPower(power);
-    brick.powerMotor("3")->setPower(power);
-    brick.powerMotor("4")->setPower(power);
-}
-
-void OmniRobot::rotatepoint()
-{
-    brick.powerMotor("2")->setPower(100);
-    brick.powerMotor("3")->setPower(100);
-    brick.powerMotor("4")->setPower(100);
-}
-
-void OmniRobot::rotatemax()
-{
-    brick.powerMotor("1")->setPower(100);
-    brick.powerMotor("2")->setPower(100);
-    brick.powerMotor("3")->setPower(100);
-    brick.powerMotor("4")->setPower(100);
+//  qDebug() << "gyro:  " << brick.gyroscope()->read()[2];
+  qDebug() << "alpha: " << alpha*180/3.14159f;
+//  qDebug() << "_______";
+ 
 }
 
