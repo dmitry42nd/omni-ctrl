@@ -44,11 +44,6 @@ OmniRobot::OmniRobot(QThread *guiThread, QString configPath):
   connect(brick.gamepad(), SIGNAL(pad(int,int,int)),       this, SLOT(gamepadPad(int,int,int)));
   connect(brick.gamepad(), SIGNAL(padUp(int)),             this, SLOT(gamepadPadUp(int)));
   connect(brick.keys(),    SIGNAL(buttonPressed(int,int)), this, SLOT(getButton(int,int)));
-
-  qDebug() << "GyroError accumulating. Don't tuch robot!";
-  period = 4;
-  connect(&timer, SIGNAL(timeout()), this, SLOT(accumGyroError()));
-  timer.start(period);
 }
 
 OmniRobot::~OmniRobot()
@@ -58,8 +53,10 @@ OmniRobot::~OmniRobot()
 
 void::OmniRobot::accumGyroError()
 {
+/*
   gyroError += (brick.gyroscope()->read()[2]);
   ++gyroCntr;
+*/
 }
 
 void OmniRobot::init()
@@ -145,8 +142,6 @@ void OmniRobot::gamepadButton(int button, int pressed)
       case 5: 
         movementMode = ANDROID_MODE; 
         period       = 20; 
-        disconnect(&timer, SIGNAL(timeout()), this, SLOT(accumGyroError()));
-        gyroError = gyroError/gyroCntr;
         break;
     }
     startControl();
