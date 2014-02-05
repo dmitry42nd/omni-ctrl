@@ -10,38 +10,34 @@
 #include "cmd_fifo.h"
 //#include <assert>
 
-//static const int max_fifo_input_size = 32;
-
-cmdFifo::cmdFifo(const QString _fifoPath):
+CmdFifo::CmdFifo(const QString _fifoPath):
 m_fifoFile(_fifoPath)
 {}
 
-cmdFifo::~cmdFifo()
+CmdFifo::~CmdFifo()
 {
-  closeFifo();
+  close();
 }
 
-void cmdFifo::openFifo()
+void CmdFifo::open()
 {
   if(!(m_fifoFile.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Unbuffered|QIODevice::Text)))
   {
     qDebug() << m_fifoFile.fileName() << ": fifo open failed";
   }
 
-  qDebug() << "fifo opened successfully";
   emit opened();
 }
 
-void cmdFifo::closeFifo()
+void CmdFifo::close()
 {
   m_fifoFile.close();
 
   emit closed();
 }
 
-void cmdFifo::writeFifo(QString _cmd)
+void CmdFifo::write(QString _cmd)
 {
     m_fifoFile.write(_cmd.toLocal8Bit().data());
     m_fifoFile.flush();
 }
-

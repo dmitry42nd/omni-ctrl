@@ -11,48 +11,33 @@
 
 static const int max_fifo_input_size = 32;
 
-logFifo::logFifo(const QString _fifoPath):
+LogFifo::LogFifo(const QString _fifoPath):
 m_fifoPath(_fifoPath)
 {}
 
-logFifo::~logFifo()
+LogFifo::~LogFifo()
 {
-  closeFifo();
+  close();
 }
 
-void logFifo::openFifo()
+void LogFifo::open()
 {
-  m_fifoFd = open(m_fifoPath.toLocal8Bit().data(), O_RDONLY|O_NONBLOCK);
-  if (m_fifoFd < 0)
+  m_fifoFd = ::open(m_fifoPath.toLocal8Bit().data(), O_SYNC|O_NONBLOCK, O_RDONLY); //O_SYNC ?
   {
+  if (m_fifoFd == -1)
     qDebug() << m_fifoPath << ": fifo open failed: " << errno;
-
     return;
   }
   
-  m_fifoNotifier = new QSocketNotifier(m_fifoFd, QSocketNotifier::Read);
-  connect(m_fifoNotifier, SIGNAL(activated(int)), this, SLOT(readFifo()));
+  m_fifoNotifier = QSharedPointer<QSocketNotifier>(new QSocketNotifier(m_fifoFd, QSocketNotifier::Read, this));
+
+  connect(m_fifoNotifier.data(), SIGNAL(activated(int)), this, SLOT(readFifo()));
   m_fifoNotifier->setEnabled(true);
 
   emit opened();
 }
 
-void logFifo::closeFifo()
-{
-
-  disconnect(m_fifoNotifier, SIGNAL(activated(int)), this, SLOT(readFifo()));
-  m_fifoNotifier->setEnabled(false);
-  if(close(m_fifoFd) != 0)
-  {
-    qDebug() << m_fifoPath << ": fifo close failed: " << errno;
-    
-    return;
-  }
-
-  emit closed();
-}
-
-void logFifo::readFifo()
+void LogFifo::readFifo()
 {
   char indato[max_fifo_input_size];
   if (read(m_fifoFd, indato, max_fifo_input_size) < 0)
@@ -61,8 +46,42 @@ void logFifo::readFifo()
     return;
   }
 
-  QString logData(indato);
+  QString s(indato);
+  qDebug() << s;
+  QStringList logStruct = s.remove(QRegExp("\n.*$")).split(' ');
 
-  emit fifoRead(logData.remove(QRegExp("\n.*$")));
+  if(logStruct[0] == "loc:")
+  {
+    int x     = logStruct[1].toInt();
+    int angle = logStruct[2].toInt();
+    int mass  = logStruct[3].toInt();
+  
+    emit lineTargetDataParsed(x, angle, mass);
+  }
+  else if (logStruct[0] == "hsv:")
+  {
+    int hue    = logStruct[1].toInt();
+    int hueTol = logStruct[2].toInt();
+    int sat    = logStruct[3].toInt();
+    int satTol = logStruct[4].toInt();
+    int val    = logStruct[5].toInt();
+    int valTol = logStruct[6].toInt();
+
+    emit lineColorDataParsed(hue, hueTol, sat, satTol, val, valTol);
+  }
 }
 
+void LogFifo::close()
+{
+
+  disconnect(m_fifoNotifier.data(), SIGNAL(activated(int)), this, SLOT(readFifo()));
+  m_fifoNotifier->setEnabled(false);
+  if(::close(m_fifoFd) != 0)
+  {
+    qDebug() << m_fifoPath << ": fifo close failed: " << errno;
+    
+    return;
+  }
+
+  emit closed();
+}

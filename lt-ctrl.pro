@@ -4,7 +4,7 @@ TRIKCONTROL_DIR = ../trikRuntime/trikControl
 QT       += core
 QT       += network
 QT       += gui
-TARGET = omni-ctrl
+TARGET = lt-ctrl
 CONFIG   += console
 CONFIG   -= app_bundle
 
@@ -22,11 +22,14 @@ LIBS += -L$$TRIKCONTROL_BINDIR -ltrikControl
 }
 
 SOURCES += main.cpp \
-           omnirobot.cpp \
+           linetracer.cpp \
            log_fifo.cpp \
-           cmd_fifo.cpp
+           cmd_fifo.cpp \
+           motor_controller.cpp \
 
 HEADERS += \
-           omnirobot.h \
+           linetracer.h \
            log_fifo.h \
-           cmd_fifo.h
+           cmd_fifo.h \
+           motor_controller.h
+

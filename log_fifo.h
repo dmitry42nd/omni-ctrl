@@ -1,39 +1,34 @@
 #pragma once
 
 #include <QObject>
-#include <QPointer>
-#include <QSocketNotifier>
-#include <trikControl/brick.h>
 
+#include <QtCore/QSharedPointer>
+#include <trikControl/brick.h>
 
 using namespace trikControl;
 
-class logFifo : public QThread
+class LogFifo : public QObject
 {
     Q_OBJECT
 public:
-    explicit logFifo(const QString fifoPath);
-    virtual ~logFifo();
-
-protected:
+    explicit LogFifo(const QString fifoPath);
+    virtual ~LogFifo();
 
 signals:
   void opened();  
   void closed();
-  void fifoRead(QString line);
+  void lineTargetDataParsed(int, int, int);
+  void lineColorDataParsed(int, int, int, int, int, int);
 
 public slots:
-  void openFifo();
-  void closeFifo();
-  void readFifo();
-//  void writeFifo(QString cmd);
-
+  void open();
+  void close();
 
 private slots:
+  void readFifo();
 
 private:
-  QPointer<QSocketNotifier> m_fifoNotifier;
+  QSharedPointer<QSocketNotifier> m_fifoNotifier;
   QString                   m_fifoPath;
   int                       m_fifoFd;
-
 };

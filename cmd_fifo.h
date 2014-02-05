@@ -6,12 +6,12 @@
 
 using namespace trikControl;
 
-class cmdFifo : public QObject
+class CmdFifo : public QObject
 {
     Q_OBJECT
 public:
-    explicit cmdFifo(const QString fifoPath);
-    virtual ~cmdFifo();
+    explicit CmdFifo(const QString fifoPath);
+    virtual ~CmdFifo();
 
 protected:
 
@@ -20,9 +20,9 @@ signals:
   void closed();
 
 public slots:
-  void openFifo();
-  void closeFifo();
-  void writeFifo(QString cmd);
+  void open();
+  void close();
+  void write(QString cmd);
 
 
 private slots:

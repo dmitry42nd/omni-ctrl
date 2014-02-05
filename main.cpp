@@ -1,8 +1,6 @@
 #include <QtGui/QApplication>
 #include <QStringList>
-#include "omnirobot.h"
-
-//#include "fifo.h"
+#include "linetracer.h"
 
 int main(int argc, char *argv[])
 {
@@ -14,7 +12,6 @@ int main(int argc, char *argv[])
       int const index = app.arguments().indexOf("-c");
       if (app.arguments().count() <= index + 1) 
       {
-//        printUsage();
         return 1;
       }
 
@@ -25,7 +22,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    OmniRobot robot(app.thread(), configPath);
+    Linetracer robot(app.thread(), configPath);
 
     return app.exec();
 }
