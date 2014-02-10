@@ -31,5 +31,6 @@ HEADERS += \
            linetracer.h \
            log_fifo.h \
            cmd_fifo.h \
-           motor_controller.h
+           motor_controller.h \
+           stopwatch.h
 

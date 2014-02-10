@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include <trikControl/brick.h>
+#include "stopwatch.h"
 
 using namespace trikControl;
 
@@ -16,16 +17,12 @@ class MotorController : public QObject
     Q_OBJECT
 
 public:
-//    explicit MotorController(QString configPath);
-    explicit MotorController(const Brick& brick, const QString port);
+    explicit MotorController(const Brick& brick, const QString port, const QString enc_port);
     virtual ~MotorController();
 
-public:
-  void setLineTargetData(int x, int angle, int mass);   
-
 public slots:
-  void start();
-  void stop();
+  void startAutoControl();
+  void stopAutoControl();
   void doStep();
   void setActualSpeed(int speed);
 
@@ -34,13 +31,18 @@ signals:
 
 private:
   QString m_port;
+  QString m_enc_port;
   const Brick& m_brick;
-
-  //target location data
-  int m_tgtX;
-  int m_prevTgtX;
-  int m_tgtAngle;
-  int m_tgtMass;
+  QTimer m_timer;
+  Stopwatch m_stopwatch;
+  
 
   int m_actualSpeed;
+  int m_currentSpeed;
+  int m_encOldData;
+  int m_encData;
+  float m_old_ppms;
+
+  struct timespec m_time, m_oldTime;
+  struct timespec m_realTime, m_oldRealTime;
 };

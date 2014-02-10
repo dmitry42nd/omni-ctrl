@@ -16,8 +16,8 @@ Linetracer::Linetracer(QThread *guiThread, QString configPath):
   m_logFifo(logFifoPath),
   m_cmdFifo(cmdFifoPath),
   m_brick(*guiThread, configPath),
-  m_motorControllerL(m_brick, "3"),
-  m_motorControllerR(m_brick, "4"),
+  m_motorControllerL(m_brick, "3", "4"),
+  m_motorControllerR(m_brick, "4", "3"),
   m_motorsWorkerThread()
 {
   m_logFifo.open();
@@ -30,8 +30,8 @@ Linetracer::Linetracer(QThread *guiThread, QString configPath):
   connect(m_brick.gamepad(), SIGNAL(button(int,int)),        this, SLOT(onGamepadButtonChanged(int, int)));
   connect(m_brick.keys(),    SIGNAL(buttonPressed(int,int)), this, SLOT(onBrickButtonChanged(int,int)));
 
-  m_motorControllerL.start();
-  m_motorControllerR.start();
+  m_motorControllerL.startAutoControl();
+//  m_motorControllerR.startAutoControl();
 
 //init state is MANUAL_MODE:
   manualMode();
@@ -140,7 +140,7 @@ void Linetracer::setLineTargetData(int x, int angle, int mass)
   m_tgtX     = x;
   m_tgtAngle = angle;
   m_tgtMass  = mass;
-  m_motorControllerL.setLineTargetData(x, angle, mass);
-  m_motorControllerR.setLineTargetData(x, angle, mass);
+  m_motorControllerL.setActualSpeed(x);
+  m_motorControllerR.setActualSpeed(x);
 }
 

@@ -1,7 +1,8 @@
 #include <QDebug>
 #include <QRegExp>
-
+#include <QStringList>
 #include "log_fifo.h"
+
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -9,7 +10,7 @@
 #include <linux/input.h>
 //#include <assert>
 
-static const int max_fifo_input_size = 32;
+static const int max_fifo_input_size = 4000;
 
 LogFifo::LogFifo(const QString _fifoPath):
 m_fifoPath(_fifoPath)
@@ -23,12 +24,14 @@ LogFifo::~LogFifo()
 void LogFifo::open()
 {
   m_fifoFd = ::open(m_fifoPath.toLocal8Bit().data(), O_SYNC|O_NONBLOCK, O_RDONLY); //O_SYNC ?
-  {
   if (m_fifoFd == -1)
-    qDebug() << m_fifoPath << ": fifo open failed: " << errno;
+  {
+     qDebug() << m_fifoPath << ": fifo open failed: " << errno;
     return;
   }
-  
+ 
+  m_fifoFile.open(m_fifoFd, QIODevice::ReadOnly);
+
   m_fifoNotifier = QSharedPointer<QSocketNotifier>(new QSocketNotifier(m_fifoFd, QSocketNotifier::Read, this));
 
   connect(m_fifoNotifier.data(), SIGNAL(activated(int)), this, SLOT(readFifo()));
@@ -39,36 +42,52 @@ void LogFifo::open()
 
 void LogFifo::readFifo()
 {
-  char indato[max_fifo_input_size];
-  if (read(m_fifoFd, indato, max_fifo_input_size) < 0)
+	m_fifoNotifier->setEnabled(false);
+
+  static char indato[max_fifo_input_size];
+
+  int size;
+  if ((size = read(m_fifoFd, indato, max_fifo_input_size)) < 0)
   {
     qDebug() << m_fifoPath << ": fifo read failed: " << errno;
     return;
   }
+  m_rest.append(QByteArray(indato, size));
 
-  QString s(indato);
-  qDebug() << s;
-  QStringList logStruct = s.remove(QRegExp("\n.*$")).split(' ');
+  QStringList lines = m_rest.split('\n');
 
-  if(logStruct[0] == "loc:")
+  m_rest = lines.last();
+
+  bool wasLoc = false;
+  bool wasHsv = false;
+
+  for(int i = lines.size()-2; !(wasHsv && wasLoc) && i >= 0; i--)
   {
-    int x     = logStruct[1].toInt();
-    int angle = logStruct[2].toInt();
-    int mass  = logStruct[3].toInt();
-  
-    emit lineTargetDataParsed(x, angle, mass);
-  }
-  else if (logStruct[0] == "hsv:")
-  {
-    int hue    = logStruct[1].toInt();
-    int hueTol = logStruct[2].toInt();
-    int sat    = logStruct[3].toInt();
-    int satTol = logStruct[4].toInt();
-    int val    = logStruct[5].toInt();
-    int valTol = logStruct[6].toInt();
+    QStringList logStruct = lines[i].split(" ", QString::SkipEmptyParts);
+    if(!wasLoc && logStruct[0] == "loc:")
+    {
+      int x     = logStruct[1].toInt();
+      int angle = logStruct[2].toInt();
+      int mass  = logStruct[3].toInt();
+    
+      wasLoc = true;
+      emit lineTargetDataParsed(x, angle, mass);
+    }
+    else if (!wasHsv && logStruct[0] == "hsv:")
+    {
+      int hue    = logStruct[1].toInt();
+      int hueTol = logStruct[2].toInt();
+      int sat    = logStruct[3].toInt();
+      int satTol = logStruct[4].toInt();
+      int val    = logStruct[5].toInt();
+      int valTol = logStruct[6].toInt();
 
-    emit lineColorDataParsed(hue, hueTol, sat, satTol, val, valTol);
+      wasHsv = true;
+      emit lineColorDataParsed(hue, hueTol, sat, satTol, val, valTol);
+    }
   }
+
+	m_fifoNotifier->setEnabled(true);
 }
 
 void LogFifo::close()
