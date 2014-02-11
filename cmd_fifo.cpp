@@ -26,9 +26,10 @@ void cmdFifo::openFifo()
   if(!(m_fifoFile.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Unbuffered|QIODevice::Text)))
   {
     qDebug() << m_fifoFile.fileName() << ": fifo open failed";
+    return;
   }
 
-  qDebug() << "fifo opened successfully";
+//  qDebug() << "Cmd fifo opened successfully";
   emit opened();
 }
 

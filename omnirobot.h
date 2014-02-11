@@ -30,10 +30,13 @@ protected:
     void androidmode();
     void lineTracerMode();
     QVector3D strafe(qreal x);
-    QVector3D rotate(qreal angle/*, qreal speed*/);
+    QVector3D rotate(qreal angle);
+    QVector3D velocity(qreal y);
+    void rotateAtTargetAngle();
     
 signals:
-  void hsvCmdParsed();
+  void hsvCmdParsed(QString cmd);
+  void detectComandSended(QString cmd);
 public slots:
 
 private slots:
@@ -43,7 +46,7 @@ private slots:
   void gamepadPad(int pad, int vx, int vy);
   void gamepadPadUp(int pad);
   void parseLogFifo(QString logData);
-  void accumGyroError();
+//  void accumGyroError(); //there is no gyroError now!
   
 private:
     int period;
@@ -51,11 +54,11 @@ private:
            CONTROL_MODE
     } omniState;
 
-    enum { ROTATE_MODE,
-           ROTATE_MAX_MODE,
-           ROTATE_POINT_MODE,
+    enum { ANDROID_MODE,
            LINE_TRACE_MODE,
-           ANDROID_MODE
+           ROTATE_MODE,
+           ROTATE_MAX_MODE,
+           ROTATE_POINT_MODE
     } movementMode;
 
     Brick   brick;
@@ -67,12 +70,10 @@ private:
     qreal xw;
     qreal yw;
 
-  
-    int64_t gyroCntr;//tmp
-
-    qreal gyrolast;
-    int gyroError;
-    qreal alpha;
+    float gyroLast;
+    float alpha;
+    float targetAngle;
+    float rotateSpeed;
 
     QMatrix3x3 Mt;
     QVector3D cmd;
