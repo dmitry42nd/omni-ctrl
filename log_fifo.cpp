@@ -30,8 +30,6 @@ void LogFifo::open()
     return;
   }
  
-  m_fifoFile.open(m_fifoFd, QIODevice::ReadOnly);
-
   m_fifoNotifier = QSharedPointer<QSocketNotifier>(new QSocketNotifier(m_fifoFd, QSocketNotifier::Read, this));
 
   connect(m_fifoNotifier.data(), SIGNAL(activated(int)), this, SLOT(readFifo()));
@@ -44,15 +42,15 @@ void LogFifo::readFifo()
 {
 	m_fifoNotifier->setEnabled(false);
 
-  static char indato[max_fifo_input_size];
+  static char indata[max_fifo_input_size];
 
   int size;
-  if ((size = read(m_fifoFd, indato, max_fifo_input_size)) < 0)
+  if ((size = read(m_fifoFd, indata, max_fifo_input_size)) < 0)
   {
     qDebug() << m_fifoPath << ": fifo read failed: " << errno;
     return;
   }
-  m_rest.append(QByteArray(indato, size));
+  m_rest.append(QByteArray(indata, size));
 
   QStringList lines = m_rest.split('\n');
 
@@ -61,7 +59,7 @@ void LogFifo::readFifo()
   bool wasLoc = false;
   bool wasHsv = false;
 
-  for(int i = lines.size()-2; !(wasHsv && wasLoc) && i >= 0; i--)
+  for(int i = lines.size() - 2; !(wasHsv && wasLoc) && i >= 0; i--)
   {
     QStringList logStruct = lines[i].split(" ", QString::SkipEmptyParts);
     if(!wasLoc && logStruct[0] == "loc:")

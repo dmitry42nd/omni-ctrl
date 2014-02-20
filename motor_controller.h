@@ -25,24 +25,34 @@ public slots:
   void stopAutoControl();
   void doStep();
   void setActualSpeed(int speed);
+  void startSpeedometer();
+  void stopSpeedometer();
+  int countSpeed();
+
 
 signals:
   void correctionDone();
+  void speedometerDone();
 
 private:
   QString m_port;
   QString m_enc_port;
   const Brick& m_brick;
   QTimer m_timer;
+/*
   Stopwatch m_stopwatch;
-  
+*/
 
   int m_actualSpeed;
-  int m_currentSpeed;
+  float m_currentSpeed;
+
+  int m_encPoints;
+  struct timespec m_time, m_oldTime;
+/*
   int m_encOldData;
-  int m_encData;
   float m_old_ppms;
 
   struct timespec m_time, m_oldTime;
   struct timespec m_realTime, m_oldRealTime;
+*/
 };

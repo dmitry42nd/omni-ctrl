@@ -31,7 +31,6 @@ private slots:
 private:
   QSharedPointer<QSocketNotifier> m_fifoNotifier;
   QString                   m_fifoPath;
-  QFile                     m_fifoFile;
   int                       m_fifoFd;
-  QString  m_rest;
+  QString                   m_rest;
 };
