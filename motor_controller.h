@@ -8,7 +8,7 @@
 #include <cmath>
 
 #include <trikControl/brick.h>
-#include "stopwatch.h"
+//#include "stopwatch.h"
 
 using namespace trikControl;
 
@@ -25,10 +25,10 @@ public slots:
   void stopAutoControl();
   void doStep();
   void setActualSpeed(int speed);
+
   void startSpeedometer();
   void stopSpeedometer();
   int countSpeed();
-
 
 signals:
   void correctionDone();
