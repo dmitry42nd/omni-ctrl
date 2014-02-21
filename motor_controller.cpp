@@ -17,7 +17,7 @@ MotorController::~MotorController()
 
 void MotorController::doStep()
 {
-  m_brick.powerMotor(m_port)->setPower(m_actualSpeed);
+  m_brick.motor(m_port)->setPower(m_actualSpeed);
 }
 
 void MotorController::startAutoControl()
