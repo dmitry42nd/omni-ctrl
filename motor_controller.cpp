@@ -30,6 +30,27 @@ void MotorController::stopAutoControl()
   disconnect(this, SIGNAL(correctionDone()), this, SLOT(doStep()));
 }
 
+void MotorController::setActualSpeed(int speed)
+{ 
+  if (m_actualSpeed != speed)
+  {
+    m_actualSpeed = speed;
+    emit correctionDone();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void MotorController::startSpeedometer()
 {
@@ -65,14 +86,5 @@ int MotorController::countSpeed()
   emit speedometerDone();
 
   return speed;
-}
-
-void MotorController::setActualSpeed(int speed)
-{ 
-  if (m_actualSpeed != speed)
-  {
-    m_actualSpeed = speed;
-    emit correctionDone();
-  }
 }
 

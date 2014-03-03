@@ -18,8 +18,8 @@ public:
 signals:
   void opened();  
   void closed();
-  void lineTargetDataParsed(int, int, int);
-  void lineColorDataParsed(int, int, int, int, int, int);
+  void ballTargetDataParsed(int, int, int);
+  void ballColorDataParsed(int, int, int, int, int, int);
 
 public slots:
   void open();

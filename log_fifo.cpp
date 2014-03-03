@@ -64,12 +64,12 @@ void LogFifo::readFifo()
     QStringList logStruct = lines[i].split(" ", QString::SkipEmptyParts);
     if(!wasLoc && logStruct[0] == "loc:")
     {
-      int x     = logStruct[1].toInt();
-      int angle = logStruct[2].toInt();
-      int mass  = logStruct[3].toInt();
+      int x    = logStruct[1].toInt();
+      int y    = logStruct[2].toInt();
+      int mass = logStruct[3].toInt();
     
       wasLoc = true;
-      emit lineTargetDataParsed(x, angle, mass);
+      emit ballTargetDataParsed(x, y, mass);
     }
     else if (!wasHsv && logStruct[0] == "hsv:")
     {
@@ -81,7 +81,7 @@ void LogFifo::readFifo()
       int valTol = logStruct[6].toInt();
 
       wasHsv = true;
-      emit lineColorDataParsed(hue, hueTol, sat, satTol, val, valTol);
+      emit ballColorDataParsed(hue, hueTol, sat, satTol, val, valTol);
     }
   }
 
