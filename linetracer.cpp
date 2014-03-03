@@ -91,8 +91,8 @@ void Linetracer::onGamepadPadUp(int padNum)
 
 void Linetracer::onGamepadButtonChanged(int buttonNum, int state)
 {
-  if (state == 0) //in case of
-
+  if (state == 0) return; //in case of
+  
   switch (buttonNum)
   {
     case 1: 
@@ -138,7 +138,7 @@ void Linetracer::setLineColorData(int hue, int hueTol, int sat, int satTol, int 
                                                 .arg(satTol)
                                                 .arg(val)
                                                 .arg(valTol);
-  qDebug() << s;
+//  qDebug() << s;
   m_cmdFifo.write(s);
 }
 
