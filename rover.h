@@ -10,6 +10,10 @@
 #include "log_fifo.h"
 #include "cmd_fifo.h"
 #include "motor_controller.h"
+
+#include "state_searching.h"
+#include "state_tracking.h"
+
 #include <trikControl/brick.h>
 
 using namespace trikControl;
@@ -22,15 +26,21 @@ public:
   explicit Rover(QThread *guiThread, QString configPath);
   virtual ~Rover();
 
+  int tgtMass() { return m_tgtMass; }
+  int tgtX() { return m_tgtX; }
+  int tgtY() { return m_tgtY; }
+
+  int oldTgtMass() { return m_oldTgtMass; }
+  int oldTgtX() { return m_oldTgtX; }
+  int oldTgtY() { return m_oldTgtY; }
+
+
 protected:
   void manualMode();
   void roverMode();
 
-  void autoControlChasis();
-  void autoControlArm();
-  void autoControlHand(); 
-
-  void manualControlChasis(int speed);
+public:
+  void manualControlChasis(int speedL, int speedR);
   void manualControlArm(int speed);
   void manualControlHand(int speed); 
 
@@ -42,6 +52,15 @@ private slots:
   void onGamepadPadUp(int padNum);
   void onGamepadButtonChanged(int buttonNum, int value);
   void onBrickButtonChanged(int buttonCode, int value);
+
+signals:
+/*
+  void xChanged();
+  void yChanged();
+  void massChanged();
+*/
+  void distanceChanged();
+  void locationChanged();
 
 private:
 
@@ -58,10 +77,11 @@ private:
 
   //target location data
   int m_tgtX;
-  int m_oldTgtX;
-  int m_tgtY;
-  int m_oldTgtY;
   int m_tgtMass;
+  int m_tgtY;
+
+  int m_oldTgtX;
+  int m_oldTgtY;
   int m_oldTgtMass;
 
   //target HSV data
@@ -71,4 +91,11 @@ private:
   int m_satTol;
   int m_val;
   int m_valTol;
+
+  //Scenario
+/*
+  StateSearching m_searching1;
+  StateTracking m_tracking2;
+*/
+
 };

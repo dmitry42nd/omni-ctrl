@@ -26,12 +26,18 @@ SOURCES += main.cpp \
            log_fifo.cpp \
            cmd_fifo.cpp \
            motor_controller.cpp \
-           state_searching.cpp
+           state_searching.cpp \
+           state_tracking.cpp \
+           state_finished.cpp
 
 HEADERS += \
            rover.h \
            log_fifo.h \
            cmd_fifo.h \
            motor_controller.h \
-           state_searching.h
+           enum_state.h \
+           state.h \
+           state_searching.h \
+           state_tracking.h \
+           state_finished.h
 

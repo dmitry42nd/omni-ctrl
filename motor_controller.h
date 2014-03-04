@@ -36,7 +36,7 @@ private:
   QString m_port;
   QString m_enc_port;
   const Brick& m_brick;
-  QTimer m_timer;
+//  QTimer m_timer;
 /*
   Stopwatch m_stopwatch;
 */

@@ -21,6 +21,10 @@ Rover::Rover(QThread *guiThread, QString configPath):
   m_motorControllerL(m_brick, "JM1", "JB4"),
   m_motorControllerR(m_brick, "JM3", "JB3"),
   m_motorsWorkerThread()
+/*,
+  m_searching1(this, *m_tracking2, UntilMass)
+  m_tracking2(this, *m_searching1)
+*/
 {
   m_logFifo.open();
   m_cmdFifo.open();
@@ -134,46 +138,20 @@ void Rover::setBallTargetData(int x, int y, int mass)
 {
 //  qDebug("Ball x, y: %d, %d", x, y);
 
-  if (m_tgtX != x)
+  if (m_tgtX != x || m_tgtY != y || m_tgtMass != mass)
   {
     m_oldTgtX    = m_tgtX;
     m_tgtX       = x;
     
-    //emit xChanged();
-  }
-
-  if (m_tgtY != y)
-  {
     m_oldTgtY    = m_tgtY;
     m_tgtY       = y;
-  
-    //emit yChanged();
-  }
-
-  if (m_tgtMass != mass)
-  {
     m_oldTgtMass = m_tgtMass;
     m_tgtMass    = mass;
 
-    //emit massChanged();
+    emit locationChanged();
   }
-}
 
-void Rover::autoControlChasis()
-{
-  //TODO: All that tracking stuff
 }
-
-void Rover::autoControlArm()
-{
-  //TODO
-}
-
-void Rover::autoControlHand()
-{
-  //TODO
-}
-
 
 //MANUAL CONTROL
 void Rover::onGamepadPadDown(int padNum, int vx, int vy)
@@ -182,7 +160,7 @@ void Rover::onGamepadPadDown(int padNum, int vx, int vy)
   switch (padNum)
   {
     case 1:
-      manualControlChasis(vy-vx);
+      manualControlChasis(vy-vx, -vy+vx);
       break;
     case 2:
       manualControlArm(vy);
@@ -200,7 +178,7 @@ void Rover::onGamepadPadUp(int padNum)
   switch (padNum)
   {
     case 1:
-      manualControlChasis(0);
+      manualControlChasis(0, 0);
       break;
     case 2:
       manualControlArm(0);
@@ -212,10 +190,10 @@ void Rover::onGamepadPadUp(int padNum)
   }
 }
 
-void Rover::manualControlChasis(int speed)
+void Rover::manualControlChasis(int speedL, int speedR)
 {
-  m_motorControllerL.setActualSpeed(speed);
-  m_motorControllerR.setActualSpeed(-speed);
+  m_motorControllerL.setActualSpeed(speedL);
+  m_motorControllerR.setActualSpeed(speedR);
 }
 
 void Rover::manualControlArm(int speed)

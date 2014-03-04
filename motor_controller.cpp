@@ -8,8 +8,7 @@ m_port(port),
 m_enc_port(enc_port),
 m_brick(brick),
 m_actualSpeed(0),
-m_currentSpeed(0),
-m_timer()
+m_currentSpeed(0)
 {}
 
 MotorController::~MotorController()

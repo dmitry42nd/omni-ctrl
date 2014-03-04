@@ -1,22 +1,26 @@
 #pragma once
 
 #include <QObject>
+#include "state.h"
 
 using namespace trikControl;
 
-class StateSearching : public QObject
+class StateSearching : public State
 {
   Q_OBJECT
 
 public:
-  explicit StateSearching(const &Rover rover);
+
+  explicit StateSearching(Rover* rover, const State* state, const StateMode);
   virtual ~StateSearching();
 
-signals:
-  void started();
-  void finished();
+//  void setObjectiveMass(int mass);
 
 public slots:
-  void start();
+  virtual void init(); //virtual is not mandatory here
+  virtual void run();  //virtual is not mandatory here
+  virtual void check();  //virtual is not mandatory here
 
+protected:
+  int m_zeroMass;
 };
