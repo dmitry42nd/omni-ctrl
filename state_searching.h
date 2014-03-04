@@ -9,7 +9,7 @@ class StateSearching : public QObject
   Q_OBJECT
 
 public:
-  explicit StateSearching(const *Rover rover);
+  explicit StateSearching(const &Rover rover);
   virtual ~StateSearching();
 
 signals:

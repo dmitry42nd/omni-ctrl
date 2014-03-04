@@ -6,9 +6,7 @@
 #include <QScopedPointer>
 
 #include <cmath>
-
 #include <trikControl/brick.h>
-//#include "stopwatch.h"
 
 using namespace trikControl;
 

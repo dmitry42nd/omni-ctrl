@@ -10,6 +10,7 @@
 #include "log_fifo.h"
 #include "cmd_fifo.h"
 #include "motor_controller.h"
+#include <trikControl/brick.h>
 
 using namespace trikControl;
 
