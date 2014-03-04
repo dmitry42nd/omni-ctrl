@@ -3,6 +3,8 @@
 #include <QObject>
 #include "state.h"
 
+class Rover;
+
 using namespace trikControl;
 
 class StateFinished : public State

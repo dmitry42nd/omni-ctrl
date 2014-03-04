@@ -13,6 +13,7 @@
 
 #include "state_searching.h"
 #include "state_tracking.h"
+#include "state_finished.h"
 
 #include <trikControl/brick.h>
 
@@ -52,6 +53,8 @@ private slots:
   void onGamepadPadUp(int padNum);
   void onGamepadButtonChanged(int buttonNum, int value);
   void onBrickButtonChanged(int buttonCode, int value);
+
+  void nextStep(State* state);
 
 signals:
 /*
@@ -93,9 +96,9 @@ private:
   int m_valTol;
 
   //Scenario
-/*
+
   StateSearching m_searching1;
   StateTracking m_tracking2;
-*/
+  StateFinished m_finished;
 
 };

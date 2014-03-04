@@ -1,6 +1,7 @@
-#include <QDebug>
+//#include <QDebug>
 
 #include "state_tracking.h"
+#include "rover.h"
 
 StateTracking::StateTracking(Rover* rover, const State* nextState, const StateMode mode) :
 State(rover, nextState, mode),

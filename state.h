@@ -1,8 +1,11 @@
 #pragma once
 
+#include <QDebug>
 #include <QObject>
 #include <trikControl/brick.h>
 #include "enum_state.h"
+
+class Rover;
 
 using namespace trikControl;
 
@@ -71,3 +74,8 @@ protected:
   }
 
 };
+/*
+#include "state_searching.h"
+#include "state_tracking.h"
+#include "state_finished.h"
+*/

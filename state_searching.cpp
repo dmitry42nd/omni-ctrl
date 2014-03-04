@@ -1,6 +1,7 @@
-#include <QDebug>
+//#include <QDebug>
 
 #include "state_searching.h"
+#include "rover.h"
 
 const int speed = 50;
 

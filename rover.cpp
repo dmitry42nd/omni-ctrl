@@ -20,11 +20,10 @@ Rover::Rover(QThread *guiThread, QString configPath):
   m_brick(*guiThread, configPath),
   m_motorControllerL(m_brick, "JM1", "JB4"),
   m_motorControllerR(m_brick, "JM3", "JB3"),
-  m_motorsWorkerThread()
-/*,
-  m_searching1(this, *m_tracking2, UntilMass)
-  m_tracking2(this, *m_searching1)
-*/
+  m_motorsWorkerThread(),
+  m_searching1(this, &m_tracking2, UntilMass),
+  m_tracking2(this, &m_finished, UntilLocked),
+  m_finished(this)
 {
   m_logFifo.open();
   m_cmdFifo.open();
@@ -43,6 +42,11 @@ Rover::Rover(QThread *guiThread, QString configPath):
   m_motorControllerR.startAutoControl();
 
   m_motorsWorkerThread.start();
+
+  connect(&m_searching1, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
+  connect(&m_tracking2, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
+  connect(&m_finished, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
+
 //init state is MANUAL_MODE:
   manualMode();
 }
@@ -77,6 +81,11 @@ void Rover::roverMode()
   connect(&m_logFifo, SIGNAL(ballTargetDataParsed(int, int, int)), this, SLOT(setBallTargetData(int, int, int)));
   disconnect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), this, SLOT(onGamepadPadDown(int,int,int)));
   disconnect(m_brick.gamepad(), SIGNAL(padUp(int)),       this, SLOT(onGamepadPadUp(int)));
+}
+
+void Rover::nextStep(State* state)
+{
+  state->init();
 }
 
 void Rover::onGamepadButtonChanged(int buttonNum, int state)
