@@ -16,6 +16,7 @@ public:
   explicit StateFinished(Rover* rover);
   virtual ~StateFinished();
 
+  void stop();
 public slots:
   virtual void init(); //virtual is not mandatory here
   virtual void run();  //virtual is not mandatory here

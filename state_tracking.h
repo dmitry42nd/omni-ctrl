@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QObject>
+#include <QTimer>
+
 #include "state.h"
 
 class Rover;
@@ -12,31 +14,32 @@ class StateTracking : public State
 
 public:
 
-  explicit StateTracking(Rover* rover, const State* state, const StateMode mode);
+  explicit StateTracking(Rover* rover, State* state, const StateMode mode);
   virtual ~StateTracking();
 
-  void setObjectiveMass(int mass);
+  void stop();
 
 public slots:
-  virtual void init(StateMode mode); //virtual is not mandatory here
+  virtual void init(); //virtual is not mandatory here
   virtual void run();  //virtual is not mandatory here
   virtual void check();  //virtual is not mandatory here
 
 protected:
-/*
-  int m_objectiveMass;
-  int m_objectiveY;
-  int m_objectiveX;
-*/
   int m_zeroMass;
   int m_zeroY;
   int m_zeroX;
+//  int m_zeroDistance;
 
   bool m_chw;
-  bool m_locked;
-//  int m_objectiveDistance;
+  bool m_fixed;
 
   void runChasis();
   void runArm();
   void runHand();
+
+private:
+  QTimer m_locker;
+
+  int integralPart;
+
 };

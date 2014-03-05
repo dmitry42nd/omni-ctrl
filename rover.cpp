@@ -5,9 +5,9 @@
 const QString logFifoPath="/tmp/dsp-detector.out.fifo";
 const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 
-const QString armServoL = "JE1";
-const QString armServoR = "JE2";
-const QString handServo = "JE4";
+const QString armServoL = "JC2";
+const QString armServoR = "JC1";
+const QString handServo = "JE1";
 
 const int speed = 100;
 const qreal PK = 0.42;
@@ -19,8 +19,9 @@ Rover::Rover(QThread *guiThread, QString configPath):
   m_cmdFifo(cmdFifoPath),
   m_brick(*guiThread, configPath),
   m_motorControllerL(m_brick, "JM1", "JB4"),
-  m_motorControllerR(m_brick, "JM3", "JB3"),
+  m_motorControllerR(m_brick, "M1", "JB3"),
   m_motorsWorkerThread(),
+//rover mode scenario:
   m_searching1(this, &m_tracking2, UntilMass),
   m_tracking2(this, &m_finished, UntilLocked),
   m_finished(this)
@@ -28,21 +29,24 @@ Rover::Rover(QThread *guiThread, QString configPath):
   m_logFifo.open();
   m_cmdFifo.open();
 
+  m_currentState = &m_searching1;
 
   qDebug() << "ROVER_STARTS";
+
   connect(&m_logFifo, SIGNAL(ballColorDataParsed(int, int, int, int, int, int)),  
-          this, SLOT(setBallColorData(int, int, int, int, int, int)));
+          this,         SLOT(setBallColorData(int, int, int, int, int, int)));
+  connect(&m_logFifo, SIGNAL(ballTargetDataParsed(int, int, int)), this, SLOT(setBallTargetData(int, int, int)));
+
   connect(m_brick.gamepad(), SIGNAL(button(int,int)),        this, SLOT(onGamepadButtonChanged(int, int)));
   connect(m_brick.keys(),    SIGNAL(buttonPressed(int,int)), this, SLOT(onBrickButtonChanged(int,int)));
 
   m_motorControllerL.moveToThread(&m_motorsWorkerThread);
   m_motorControllerR.moveToThread(&m_motorsWorkerThread);
-
   m_motorControllerL.startAutoControl();
   m_motorControllerR.startAutoControl();
-
   m_motorsWorkerThread.start();
 
+//rover mode scenario:
   connect(&m_searching1, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
   connect(&m_tracking2, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
   connect(&m_finished, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
@@ -65,9 +69,8 @@ void Rover::manualMode()
   movementMode = MANUAL_MODE;
   qDebug() << "MANUAL_MODE";
 
-  disconnect(&m_logFifo, SIGNAL(ballTargetDataParsed(int, int, int)), this, SLOT(setLineTargetData(int, int, int)));
-  m_motorControllerL.setActualSpeed(0);
-  m_motorControllerR.setActualSpeed(0);
+  m_currentState->stop();
+  stopRover();
 
   connect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), this, SLOT(onGamepadPadDown(int,int,int)));
   connect(m_brick.gamepad(), SIGNAL(padUp(int)),       this, SLOT(onGamepadPadUp(int)));
@@ -78,14 +81,16 @@ void Rover::roverMode()
   qDebug() << "ROVER_MODE";
   movementMode = ROVER_MODE;
 
-  connect(&m_logFifo, SIGNAL(ballTargetDataParsed(int, int, int)), this, SLOT(setBallTargetData(int, int, int)));
   disconnect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), this, SLOT(onGamepadPadDown(int,int,int)));
   disconnect(m_brick.gamepad(), SIGNAL(padUp(int)),       this, SLOT(onGamepadPadUp(int)));
+
+  m_currentState->init();
 }
 
 void Rover::nextStep(State* state)
 {
-  state->init();
+  m_currentState = state;
+  m_currentState->init();
 }
 
 void Rover::onGamepadButtonChanged(int buttonNum, int state)
@@ -118,12 +123,25 @@ void Rover::onBrickButtonChanged(int buttonCode, int state)
     case 28:  
       m_cmdFifo.write("detect\n");
       break;
-    case 105:  
+    case 139:  
       if(movementMode != ROVER_MODE)
       {
         roverMode();
-        break;
-      } 
+      }
+      else
+      {
+        manualMode();
+      }
+      break;
+    case 105:
+      m_zeroMass = m_tgtMass;
+      m_zeroY    = m_tgtY;
+      m_zeroX    = m_tgtX;
+      qDebug() << "x y mass: " << m_zeroX << " " << m_zeroY << " " << m_zeroMass;
+      break;
+    case 103:
+      resetScenario();
+      break;
     default:
       manualMode();
   }
@@ -154,6 +172,7 @@ void Rover::setBallTargetData(int x, int y, int mass)
     
     m_oldTgtY    = m_tgtY;
     m_tgtY       = y;
+
     m_oldTgtMass = m_tgtMass;
     m_tgtMass    = mass;
 
@@ -169,7 +188,7 @@ void Rover::onGamepadPadDown(int padNum, int vx, int vy)
   switch (padNum)
   {
     case 1:
-      manualControlChasis(vy-vx, -vy+vx);
+      manualControlChasis(vy+vx, vy-vx); //seems to be right
       break;
     case 2:
       manualControlArm(vy);
@@ -190,8 +209,9 @@ void Rover::onGamepadPadUp(int padNum)
       manualControlChasis(0, 0);
       break;
     case 2:
-      manualControlArm(0);
-      manualControlHand(0);
+      m_brick.motor(armServoL)->powerOff();
+      m_brick.motor(armServoR)->powerOff();
+      m_brick.motor(handServo)->powerOff();
       break;
     default:
       qDebug() << "More than two pads is not provided";
@@ -201,8 +221,8 @@ void Rover::onGamepadPadUp(int padNum)
 
 void Rover::manualControlChasis(int speedL, int speedR)
 {
-  m_motorControllerL.setActualSpeed(speedL);
-  m_motorControllerR.setActualSpeed(speedR);
+  m_motorControllerL.setActualSpeed(-speedL);
+  m_motorControllerR.setActualSpeed(-speedR);
 }
 
 void Rover::manualControlArm(int speed)
@@ -214,5 +234,22 @@ void Rover::manualControlArm(int speed)
 void Rover::manualControlHand(int speed)
 {
   m_brick.motor(handServo)->setPower(speed);
+}
+
+void Rover::stopRover()
+{
+  m_brick.motor(handServo)->powerOff();
+  m_brick.motor(armServoL)->powerOff();
+  m_brick.motor(armServoR)->powerOff();
+  m_motorControllerL.setActualSpeed(0);
+  m_motorControllerR.setActualSpeed(0);
+}
+
+void Rover::resetScenario()
+{
+  m_currentState->stop();
+  stopRover();
+
+  m_currentState=&m_searching1;
 }
 

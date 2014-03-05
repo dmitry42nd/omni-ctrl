@@ -13,10 +13,10 @@ class StateSearching : public State
 
 public:
 
-  explicit StateSearching(Rover* rover, const State* state, const StateMode);
+  explicit StateSearching(Rover* rover, State* state, const StateMode);
   virtual ~StateSearching();
 
-//  void setObjectiveMass(int mass);
+ void stop();
 
 public slots:
   virtual void init(); //virtual is not mandatory here

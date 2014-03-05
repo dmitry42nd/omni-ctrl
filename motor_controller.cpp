@@ -16,7 +16,10 @@ MotorController::~MotorController()
 
 void MotorController::doStep()
 {
-  m_brick.motor(m_port)->setPower(m_actualSpeed);
+  int add = 15;
+  add = m_actualSpeed > 0 ? add : m_actualSpeed < 0 ? -add : 0;
+
+  m_brick.motor(m_port)->setPower(m_actualSpeed + add);
 }
 
 void MotorController::startAutoControl()

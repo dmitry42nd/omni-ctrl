@@ -14,7 +14,7 @@ class State : public QObject
   Q_OBJECT
 
 public:
-  State(Rover* rover, const State* nextState, const StateMode mode) :
+  State(Rover* rover, State* nextState, const StateMode mode) :
   m_rover(rover),
   m_nextState(nextState),
   m_mode(mode)
@@ -27,9 +27,14 @@ public:
   ~State()
   {}
 
+  virtual void stop()
+  {
+    qDebug() << "Sorry, Mario, your stop() is in another castle!"; 
+  }
+
 signals:
   void started();
-  void finished(const State* state);
+  void finished(State* state);
   void finished();
   void failed();
 
@@ -44,7 +49,7 @@ public slots:
 
 protected:
   Rover* m_rover;
-  const State* m_nextState;
+  State* m_nextState;
   StateMode m_mode;
 
   static int powerProportional(int _val, int _min, int _zero, int _max)

@@ -3,8 +3,6 @@
 #include "state_finished.h"
 #include "rover.h"
 
-const int speed = 50;
-
 StateFinished::StateFinished(Rover* rover) :
 State(rover)
 {}
@@ -22,12 +20,11 @@ void StateFinished::init()
 
 void StateFinished::run()
 {
-  m_rover->manualControlChasis(0, 0);
-  m_rover->manualControlArm(0);
-  m_rover->manualControlHand(0);
+  m_rover->resetScenario();
 
   emit finished();
 }
 
 void StateFinished::check() {}
 
+void StateFinished::stop() {}
