@@ -28,6 +28,7 @@ SOURCES += main.cpp \
            motor_controller.cpp \
            state_searching.cpp \
            state_tracking.cpp \
+           state_squeezing.cpp \
            state_finished.cpp
 
 HEADERS += \
@@ -39,5 +40,6 @@ HEADERS += \
            state.h \
            state_searching.h \
            state_tracking.h \
+           state_squeezing.h \
            state_finished.h
 

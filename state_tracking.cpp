@@ -32,7 +32,6 @@ void StateTracking::init()
       connect(m_rover, SIGNAL(locationChanged()), this, SLOT(run()));
       break;
     case UntilLocked:
-      //connect(m_rover, SIGNAL(locationChanged()), this, SLOT(check()));
       connect(m_rover, SIGNAL(locationChanged()), this, SLOT(run()));  
       connect(&m_locker, SIGNAL(timeout()), this, SLOT(check()));
       break;
@@ -56,23 +55,27 @@ void StateTracking::run()
 
 void StateTracking::runChasis()
 {
+  int tgtMass = m_rover->tgtMass();
+  int tgtY = m_rover->tgtY();
+  int tgtX = m_rover->tgtX();
+  
   int yaw;
   int speed;
   int backSpeed;
 
-  integralPart += m_rover->oldTgtX()/10
   yaw = m_rover->tgtX();
-  yaw += m_rover->oldTgtX()/10;
+  yaw += m_lastYaw/5;
+  m_lastYaw = yaw;
 
-  speed = powerProportional(m_rover->tgtMass(), 0, m_zeroMass, 100); // back/forward based on ball size
-  backSpeed = powerProportional(m_rover->tgtY(), -100, m_zeroY, 100)/2; // move back/forward if ball leaves range
+  speed = powerProportional(tgtMass, 0, m_zeroMass, 100); // back/forward based on ball size
+  backSpeed = powerProportional(tgtY, -100, m_zeroY, 100); // move back/forward if ball leaves range
 
-  if(m_chw || m_rover->tgtMass() < m_zeroMass/6)
+  if(m_chw || tgtMass < m_zeroMass/6)
   {
 
     speed += backSpeed;
 
-    int m_const = 0;
+    int m_const = 10;
     int m_const2 = 2;
     int speedL = (-speed+yaw);
 
@@ -88,7 +91,7 @@ void StateTracking::runChasis()
     else if (speedR <= -m_const)
       speedR = -m_const+(speedR+m_const)/m_const2;
 
-    qDebug() << "Chasis l: " << speedL << "x r: " << speedR;
+//    qDebug() << "Chasis l: " << speedL << "x r: " << speedR;
 
     m_rover->manualControlChasis(speedL, speedR);
   }
@@ -105,11 +108,11 @@ void StateTracking::runArm()
 
   speed = powerProportional(m_rover->tgtY(), -100, m_zeroY, 100);
 
-  qDebug() << "Arm: " << speed;
+//  qDebug() << "Arm: " << speed;
 
   if (abs(speed)>15){ 
     m_chw = false;
-    speed += sign(speed)*15;
+    speed += sign(speed)*20;
   } else {
     speed = 0;
     m_chw = true;
@@ -134,6 +137,7 @@ void StateTracking::runHand()
           && abs(diffY) <= 10
           && abs(diffMass) <= 10);
 
+
 #warning DEBUG
   qDebug()
   << diffX << " "
@@ -143,6 +147,7 @@ void StateTracking::runHand()
   << "(" << tgtX    << "->" << m_zeroX    << " " 
          << tgtY    << "->" << m_zeroY    << " " 
          << tgtMass << "->" << m_zeroMass << ")";
+
 
   if (m_fixed)
   {

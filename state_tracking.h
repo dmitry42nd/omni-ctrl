@@ -40,6 +40,6 @@ protected:
 private:
   QTimer m_locker;
 
-  int integralPart;
+  int m_lastYaw;
 
 };

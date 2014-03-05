@@ -6,5 +6,6 @@ enum StateMode
   UntilDistance,
   UntilTimeout,
   UntilButtonPressed,
-  UntilLocked
+  UntilLocked,
+  None
 };

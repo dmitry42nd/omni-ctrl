@@ -3,7 +3,7 @@
 #include "state_searching.h"
 #include "rover.h"
 
-const int speed = 30;
+const int speed = 20;
 
 StateSearching::StateSearching(Rover* rover, State* nextState, const StateMode mode) :
 State(rover, nextState, mode),

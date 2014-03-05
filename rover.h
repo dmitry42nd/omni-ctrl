@@ -14,6 +14,7 @@
 #include "state_searching.h"
 #include "state_tracking.h"
 #include "state_finished.h"
+#include "state_squeezing.h"
 
 #include <trikControl/brick.h>
 
@@ -47,8 +48,6 @@ public:
   void resetScenario();
   
 protected:
-  void manualMode();
-  void roverMode();
 
 private slots:
   void setBallColorData(int hue, int hueTol, int sat, int satTol, int val, int valTol);
@@ -60,6 +59,9 @@ private slots:
   void onBrickButtonChanged(int buttonCode, int value);
 
   void nextStep(State* state);
+
+  void manualMode();
+  void roverMode();
 
 signals:
 /*
@@ -109,6 +111,7 @@ private:
   //Scenario
   StateSearching m_searching1;
   StateTracking m_tracking2;
+  StateSqueezing m_squeezing3;
   StateFinished m_finished;
 
 };

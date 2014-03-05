@@ -23,7 +23,8 @@ Rover::Rover(QThread *guiThread, QString configPath):
   m_motorsWorkerThread(),
 //rover mode scenario:
   m_searching1(this, &m_tracking2, UntilMass),
-  m_tracking2(this, &m_finished, UntilLocked),
+  m_tracking2(this, &m_squeezing3, UntilLocked),
+  m_squeezing3(this, &m_finished, None),
   m_finished(this)
 {
   m_logFifo.open();
@@ -49,6 +50,7 @@ Rover::Rover(QThread *guiThread, QString configPath):
 //rover mode scenario:
   connect(&m_searching1, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
   connect(&m_tracking2, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
+  connect(&m_squeezing3, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
   connect(&m_finished, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
 
 //init state is MANUAL_MODE:
@@ -251,5 +253,7 @@ void Rover::resetScenario()
   stopRover();
 
   m_currentState=&m_searching1;
+  m_brick.motor(handServo)->setPower(-100);
+  QTimer::singleShot(5000, this, SLOT(manualMode()));
 }
 
