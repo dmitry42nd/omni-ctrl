@@ -16,8 +16,14 @@ MotorController::~MotorController()
 
 void MotorController::doStep()
 {
+
+//dirty code for robot unstucking
   int add = 15;
   add = m_actualSpeed > 0 ? add : m_actualSpeed < 0 ? -add : 0;
+
+  if (abs(m_actualSpeed) < 25)
+    m_actualSpeed+=sign(m_actualSpeed);
+//
 
   m_brick.motor(m_port)->setPower(m_actualSpeed + add);
 }

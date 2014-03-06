@@ -1,8 +1,17 @@
 //#include <QDebug>
 
+#include <cmath>
 #include "state_tracking.h"
 #include "rover.h"
 
+const float xPK = 1.1;
+const float xIK = 0.05;
+const float xDK = 0.3;
+/*
+const float massPK = 1;
+const float massIK = 0.05;
+const float massDK = 0.1;
+*/
 StateTracking::StateTracking(Rover* rover, State* nextState, const StateMode mode) :
 State(rover, nextState, mode),
 /*
@@ -19,7 +28,7 @@ StateTracking::~StateTracking()
 
 void StateTracking::init()
 {
-  qDebug() << "START_TRACKING";
+  qDebug() << "STAЯT_TЯACKИNГ";
 
   m_zeroMass = m_rover->zeroMass();
   m_zeroY    = m_rover->zeroY();
@@ -34,6 +43,7 @@ void StateTracking::init()
     case UntilLocked:
       connect(m_rover, SIGNAL(locationChanged()), this, SLOT(run()));  
       connect(&m_locker, SIGNAL(timeout()), this, SLOT(check()));
+      connect(m_rover, SIGNAL(locationChanged()), this, SLOT(massController()));
       break;
 
     default:
@@ -55,44 +65,26 @@ void StateTracking::run()
 
 void StateTracking::runChasis()
 {
-  int tgtMass = m_rover->tgtMass();
-  int tgtY = m_rover->tgtY();
-  int tgtX = m_rover->tgtX();
+/*
+  float tgtMass = m_rover->tgtMass() - m_zeroMass;
+  float oldTgtMass = m_rover->oldTgtMass() - m_zeroMass;
+*/
+  float tgtMass = m_rover->tgtMass();
+  float tgtY = m_rover->tgtY();
+  float tgtX = m_rover->tgtX() - m_zeroX;
+  float oldTgtX = m_rover->oldTgtX() - m_zeroX;
   
-  int yaw;
-  int speed;
-  int backSpeed;
-
-  yaw = m_rover->tgtX();
-  yaw += m_lastYaw/5;
-  m_lastYaw = yaw;
-
-  speed = powerProportional(tgtMass, 0, m_zeroMass, 100); // back/forward based on ball size
-  backSpeed = powerProportional(tgtY, -100, m_zeroY, 100); // move back/forward if ball leaves range
-
-  if(m_chw || tgtMass < m_zeroMass/6)
+  if (m_chw || tgtMass < m_zeroMass/3)
   {
+    int yaw = xPK*tgtX + xIK*(tgtX + oldTgtX) + xDK*(tgtX - oldTgtX);
+//    int speed = xPK*tgtMass + massIK*(tgtMass + oldTgtMass) + massDK*(tgtMass - oldTgtMass);
+    int speed = powerProportional(tgtMass, 0, m_zeroMass, 100); // back/forward based on ball size
+    int backSpeed = powerProportional(tgtY, -100, m_zeroY, 100); // move back/forward if ball leaves range
 
-    speed += backSpeed;
-
-    int m_const = 10;
-    int m_const2 = 2;
-    int speedL = (-speed+yaw);
-
-    if (speedL >= m_const)
-      speedL = m_const+(speedL-m_const)/m_const2;
-    else if (speedL <= -m_const)
-      speedL = -m_const+(speedL+m_const)/m_const2;
-
-    int speedR = (-speed-yaw);
-
-    if (speedR >= m_const)
-      speedR = m_const+(speedR-m_const)/m_const2;
-    else if (speedR <= -m_const)
-      speedR = -m_const+(speedR+m_const)/m_const2;
+    int speedL = (-(speed+backSpeed)+yaw)/2;
+    int speedR = (-(speed+backSpeed)-yaw)/2;
 
 //    qDebug() << "Chasis l: " << speedL << "x r: " << speedR;
-
     m_rover->manualControlChasis(speedL, speedR);
   }
   else
@@ -137,7 +129,7 @@ void StateTracking::runHand()
           && abs(diffY) <= 10
           && abs(diffMass) <= 10);
 
-
+/*
 #warning DEBUG
   qDebug()
   << diffX << " "
@@ -147,7 +139,7 @@ void StateTracking::runHand()
   << "(" << tgtX    << "->" << m_zeroX    << " " 
          << tgtY    << "->" << m_zeroY    << " " 
          << tgtMass << "->" << m_zeroMass << ")";
-
+*/
 
   if (m_fixed)
   {
@@ -173,8 +165,13 @@ void StateTracking::check()
       break;
     case UntilLocked:
         qDebug() << "TRAGET LOCKED";
-        disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(run()));
+
+        m_rover->stopRover();
+//stop()?
+        disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(massController()));
         disconnect(&m_locker, SIGNAL(timeout()), this, SLOT(check()));
+        disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(run()));
+//
         emit finished(m_nextState);
     default:
       break;
@@ -186,4 +183,5 @@ void StateTracking::stop()
   qDebug() << "Tracking stoped";
   disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(run()));
   disconnect(&m_locker, SIGNAL(timeout()), this, SLOT(check()));
+  disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(massController()));
 }

@@ -12,7 +12,7 @@ StateFinished::~StateFinished()
 
 void StateFinished::init()
 {
-  qDebug() << "FINISHED";
+  qDebug() << "FINISHING";
 
   run();
   emit started();
@@ -21,10 +21,19 @@ void StateFinished::init()
 void StateFinished::run()
 {
   m_rover->resetScenario();
+  m_rover->manualMode();
+
+  check(); //just for codestyle accordance
+}
+
+void StateFinished::check() 
+{
+  qDebug() << "FINISHED";
+
+  m_rover->stopRover();
+  stop();
 
   emit finished();
 }
-
-void StateFinished::check() {}
 
 void StateFinished::stop() {}

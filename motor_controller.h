@@ -46,6 +46,7 @@ private:
 
   int m_encPoints;
   struct timespec m_time, m_oldTime;
+
 /*
   int m_encOldData;
   float m_old_ppms;
@@ -53,4 +54,9 @@ private:
   struct timespec m_time, m_oldTime;
   struct timespec m_realTime, m_oldRealTime;
 */
+  static int sign(int _v)
+  {
+    return (_v < 0) ? -1 : ((_v > 0) ? 1 : 0);
+  }
+
 };

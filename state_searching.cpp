@@ -3,7 +3,8 @@
 #include "state_searching.h"
 #include "rover.h"
 
-const int speed = 20;
+const int speed = 30;
+//const int speed = 0;
 
 StateSearching::StateSearching(Rover* rover, State* nextState, const StateMode mode) :
 State(rover, nextState, mode),
@@ -48,10 +49,13 @@ void StateSearching::check()
   switch(m_mode)
   {
     case UntilMass:
-      if (m_rover->tgtMass() > 5)
+      if (m_rover->tgtMass() > 2)
       {
         qDebug() << "FOUND";
-        disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(check()));
+
+        m_rover->stopRover();
+        stop();
+
         emit finished(m_nextState);
       }
       break;
@@ -63,7 +67,6 @@ void StateSearching::check()
 
 void StateSearching::stop()
 {
-  qDebug() << "Searching stoped";
   disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(check()));
 }
 

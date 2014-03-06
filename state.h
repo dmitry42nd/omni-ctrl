@@ -46,6 +46,7 @@ public slots:
 
   virtual void run() { qDebug() << "Sorry, Mario, your run() is in another castle!"; }
   virtual void check() { qDebug() << "Sorry, Mario, your check() is in another castle!"; }
+  virtual void massController();
 
 protected:
   Rover* m_rover;
@@ -77,7 +78,6 @@ protected:
   {
     return (_v < 0) ? -1 : ((_v > 0) ? 1 : 0);
   }
-
 };
 /*
 #include "state_searching.h"

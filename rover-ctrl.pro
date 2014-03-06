@@ -26,9 +26,11 @@ SOURCES += main.cpp \
            log_fifo.cpp \
            cmd_fifo.cpp \
            motor_controller.cpp \
+           state.cpp \
            state_searching.cpp \
            state_tracking.cpp \
            state_squeezing.cpp \
+           state_releasing.cpp \
            state_finished.cpp
 
 HEADERS += \
@@ -41,5 +43,6 @@ HEADERS += \
            state_searching.h \
            state_tracking.h \
            state_squeezing.h \
+           state_releasing.h \
            state_finished.h
 

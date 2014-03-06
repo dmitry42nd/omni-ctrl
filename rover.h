@@ -15,6 +15,7 @@
 #include "state_tracking.h"
 #include "state_finished.h"
 #include "state_squeezing.h"
+#include "state_releasing.h"
 
 #include <trikControl/brick.h>
 
@@ -28,6 +29,8 @@ public:
   explicit Rover(QThread *guiThread, QString configPath);
   virtual ~Rover();
 
+  void roverMode();
+
   int tgtMass() { return m_tgtMass; }
   int tgtX() { return m_tgtX; }
   int tgtY() { return m_tgtY; }
@@ -40,15 +43,17 @@ public:
   int zeroX() { return m_zeroX; }
   int zeroY() { return m_zeroY; }
 
+public slots:
+
   void manualControlChasis(int speedL, int speedR);
   void manualControlArm(int speed);
   void manualControlHand(int speed); 
   
   void stopRover();
   void resetScenario();
-  
-protected:
+  void restart();
 
+  void manualMode();
 private slots:
   void setBallColorData(int hue, int hueTol, int sat, int satTol, int val, int valTol);
   void setBallTargetData(int x, int angle, int mass);
@@ -59,10 +64,6 @@ private slots:
   void onBrickButtonChanged(int buttonCode, int value);
 
   void nextStep(State* state);
-
-  void manualMode();
-  void roverMode();
-
 signals:
 /*
   void xChanged();
@@ -112,6 +113,7 @@ private:
   StateSearching m_searching1;
   StateTracking m_tracking2;
   StateSqueezing m_squeezing3;
+  StateReleasing m_releasing4;
   StateFinished m_finished;
 
 };

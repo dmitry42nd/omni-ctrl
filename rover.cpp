@@ -24,8 +24,10 @@ Rover::Rover(QThread *guiThread, QString configPath):
 //rover mode scenario:
   m_searching1(this, &m_tracking2, UntilMass),
   m_tracking2(this, &m_squeezing3, UntilLocked),
-  m_squeezing3(this, &m_finished, None),
+  m_squeezing3(this, &m_releasing4, None),
+  m_releasing4(this, &m_finished, None),
   m_finished(this)
+//TODO:: disconnect/connect states stuff in resetScenario, and refactor all rover.cpp stuff
 {
   m_logFifo.open();
   m_cmdFifo.open();
@@ -46,12 +48,6 @@ Rover::Rover(QThread *guiThread, QString configPath):
   m_motorControllerL.startAutoControl();
   m_motorControllerR.startAutoControl();
   m_motorsWorkerThread.start();
-
-//rover mode scenario:
-  connect(&m_searching1, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
-  connect(&m_tracking2, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
-  connect(&m_squeezing3, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
-  connect(&m_finished, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
 
 //init state is MANUAL_MODE:
   manualMode();
@@ -86,12 +82,22 @@ void Rover::roverMode()
   disconnect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), this, SLOT(onGamepadPadDown(int,int,int)));
   disconnect(m_brick.gamepad(), SIGNAL(padUp(int)),       this, SLOT(onGamepadPadUp(int)));
 
+  connect(&m_searching1, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
+  connect(&m_searching1, SIGNAL(failed()), this, SLOT(restart()));
+
   m_currentState->init();
 }
 
 void Rover::nextStep(State* state)
 {
+  disconnect(m_currentState, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
+  disconnect(m_currentState, SIGNAL(failed()), this, SLOT(restart()));  
+
   m_currentState = state;
+
+  connect(m_currentState, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
+  connect(m_currentState, SIGNAL(failed()), this, SLOT(restart()));
+
   m_currentState->init();
 }
 
@@ -247,13 +253,18 @@ void Rover::stopRover()
   m_motorControllerR.setActualSpeed(0);
 }
 
+void Rover::restart()
+{
+  qDebug() << "reseting";
+  resetScenario();
+  m_currentState->init();
+}
+
 void Rover::resetScenario()
 {
-  m_currentState->stop();
-  stopRover();
-
   m_currentState=&m_searching1;
+
   m_brick.motor(handServo)->setPower(-100);
-  QTimer::singleShot(5000, this, SLOT(manualMode()));
+  QTimer::singleShot(3000, this, SLOT(stopRover()));
 }
 
