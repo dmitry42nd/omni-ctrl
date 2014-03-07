@@ -8,7 +8,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <linux/input.h>
-//#include <assert>
 
 static const int max_fifo_input_size = 4000;
 
@@ -50,10 +49,9 @@ void LogFifo::readFifo()
     qDebug() << m_fifoPath << ": fifo read failed: " << errno;
     return;
   }
+
   m_rest.append(QByteArray(indata, size));
-
   QStringList lines = m_rest.split('\n');
-
   m_rest = lines.last();
 
   bool wasColor = false;

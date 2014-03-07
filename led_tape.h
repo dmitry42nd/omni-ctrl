@@ -8,6 +8,7 @@
 #include <cmath>
 
 #include "log_fifo.h"
+#include <trikControl/brick.h>
 
 using namespace trikControl;
 
@@ -24,6 +25,7 @@ protected:
 
 signals:
   void colorChanged();
+  void outColorChanged();
   
 private slots:
   void setColorData(int red, int gre, int blu, int colorEntry);
@@ -31,11 +33,19 @@ private slots:
 
   void start();
   void stop();
-  void colorStabilityCheck();
+
   void setComingOutColor();
-  void setColorStep();
+
+  void outColorChangedCheck();
+
+//  void setColorStep(int color, QString colorPort);
+
+  void setColorStepR();
+  void setColorStepG();
+  void setColorStepB();
 
 private:
+    static int convert(float c256);
 
     enum { PAUSE,
            LIGHTING
@@ -46,19 +56,29 @@ private:
     QTimer  m_colorStabilityChecker;
     QTimer  m_colorChangeTimer;
 
+    QTimer  m_cCTimerR;
+    QTimer  m_cCTimerG;
+    QTimer  m_cCTimerB;
+
+    int m_colorSetCnt;
     //color data
     int m_red;
     int m_gre;
     int m_blu;
 
+    int m_colorEntry;
+
     int m_redOut;
     int m_greOut;
     int m_bluOut;
-/*
-    int m_hueP;
-    int m_satP;
-    int m_valP;
-*/
-    int m_colorEntry;
+
+    int redD;
+    int greD;
+    int bluD;
+
+    int redT;
+    int greT;
+    int bluT;
+
 };
 

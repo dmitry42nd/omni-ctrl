@@ -1,5 +1,6 @@
 #include <QtGui/QApplication>
 #include <QStringList>
+
 #include "led_tape.h"
 
 int main(int argc, char *argv[])

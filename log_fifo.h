@@ -1,9 +1,6 @@
 #pragma once
 
 #include <QObject>
-
-#include <QtCore/QSharedPointer>
-
 #include <trikControl/brick.h>
 
 using namespace trikControl;
