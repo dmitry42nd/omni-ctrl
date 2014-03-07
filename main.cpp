@@ -1,6 +1,6 @@
 #include <QtGui/QApplication>
 #include <QStringList>
-#include "linetracer.h"
+#include "led_tape.h"
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    Linetracer robot(app.thread(), configPath);
+    LedTape robot(app.thread(), configPath);
 
     return app.exec();
 }

@@ -3,7 +3,7 @@
 #include <QStringList>
 #include "log_fifo.h"
 
-
+#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -56,32 +56,22 @@ void LogFifo::readFifo()
 
   m_rest = lines.last();
 
-  bool wasLoc = false;
-  bool wasHsv = false;
+  bool wasColor = false;
 
-  for(int i = lines.size() - 2; !(wasHsv && wasLoc) && i >= 0; i--)
+  for(int i = lines.size() - 2; !(wasColor) && i >= 0; i--)
   {
     QStringList logStruct = lines[i].split(" ", QString::SkipEmptyParts);
-    if(!wasLoc && logStruct[0] == "loc:")
+    if(!wasColor && logStruct[0] == "color:")
     {
-      int x     = logStruct[1].toInt();
-      int angle = logStruct[2].toInt();
-      int mass  = logStruct[3].toInt();
+      int color      = logStruct[1].toInt();
+      int colorEntry = logStruct[2].toInt();
     
-      wasLoc = true;
-      emit lineTargetDataParsed(x, angle, mass);
-    }
-    else if (!wasHsv && logStruct[0] == "hsv:")
-    {
-      int hue    = logStruct[1].toInt();
-      int hueTol = logStruct[2].toInt();
-      int sat    = logStruct[3].toInt();
-      int satTol = logStruct[4].toInt();
-      int val    = logStruct[5].toInt();
-      int valTol = logStruct[6].toInt();
+      wasColor = true;
 
-      wasHsv = true;
-      emit lineColorDataParsed(hue, hueTol, sat, satTol, val, valTol);
+      int red = (uint8_t)(color >> 16);
+      int gre = (uint8_t)(color >> 8);
+      int blu = (uint8_t)color;
+      emit colorDataParsed(red, gre, blu, colorEntry);
     }
   }
 
