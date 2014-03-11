@@ -1,4 +1,4 @@
-TRIKCONTROL_BINDIR = ../trikRuntime/bin/release
+TRIKCONTROL_BINDIR = ../trikRuntime/bin/arm-release
 TRIKCONTROL_DIR = ../trikRuntime/trikControl
 
 QT       += core
