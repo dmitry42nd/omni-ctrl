@@ -64,9 +64,9 @@ void LedTape::lighting()
   m_bluOut = m_blu;
 
   m_brick.motor(powPort)->setPower(100);
-  m_brick.motor(redPort)->setPower(convert(m_redOut));
-  m_brick.motor(grePort)->setPower(convert(m_greOut));
-  m_brick.motor(bluPort)->setPower(convert(m_bluOut));
+  m_brick.motor(redPort)->setPower(m_redOut);
+  m_brick.motor(grePort)->setPower(m_greOut);
+  m_brick.motor(bluPort)->setPower(m_bluOut);
 }
 
 void LedTape::onBrickButtonChanged(int buttonCode, int state)
@@ -91,11 +91,15 @@ void LedTape::setColorData(int red, int gre, int blu, int colorEntry)
 //  qDebug("line x, angle: %d, %d", x, angle);
   m_colorEntry = colorEntry; //colorEntry is not signal emiting factor  
 
-  if (m_red != red || m_gre != gre || m_blu != blu)
+  int tmpRed = convert(red);
+  int tmpGre = convert(gre);
+  int tmpBlu = convert(blu);
+
+  if (m_red != tmpRed || m_gre != tmpGre || m_blu != tmpBlu)
   {
-    m_red = red;
-    m_gre = gre;
-    m_blu = blu;
+    m_red = tmpRed;
+    m_gre = tmpGre;
+    m_blu = tmpBlu;
 
     emit colorChanged();
     qDebug() << "color changed";
@@ -162,7 +166,7 @@ void LedTape::setColorStepR()
   else
   {
     m_redOut += redD;
-    m_brick.motor(redPort)->setPower(convert(m_redOut));
+    m_brick.motor(redPort)->setPower(m_redOut);
   }
 }
 
@@ -178,7 +182,7 @@ void LedTape::setColorStepG()
   else
   {
     m_greOut += greD;
-    m_brick.motor(grePort)->setPower(convert(m_greOut));
+    m_brick.motor(grePort)->setPower(m_greOut);
   }
 }
 
@@ -194,7 +198,7 @@ void LedTape::setColorStepB()
   else
   {
     m_bluOut += bluD;
-    m_brick.motor(bluPort)->setPower(convert(m_bluOut));
+    m_brick.motor(bluPort)->setPower(m_bluOut);
   }
 }
 
