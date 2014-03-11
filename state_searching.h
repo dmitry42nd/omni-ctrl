@@ -1,11 +1,10 @@
 #pragma once
 
 #include <QObject>
+
 #include "state.h"
 
 class Rover;
-
-using namespace trikControl;
 
 class StateSearching : public State
 {

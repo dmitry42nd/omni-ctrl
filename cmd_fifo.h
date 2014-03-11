@@ -1,10 +1,8 @@
 #pragma once
 
 #include <QObject>
-#include <trikControl/brick.h>
-
-
-using namespace trikControl;
+#include <QString>
+#include <QFile>
 
 class CmdFifo : public QObject
 {

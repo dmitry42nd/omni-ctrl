@@ -1,6 +1,4 @@
-//#include <QDebug>
-
-#include <QTimer>
+#include <QDebug>
 #include "state_releasing.h"
 #include "rover.h"
 

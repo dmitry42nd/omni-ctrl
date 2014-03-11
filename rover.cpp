@@ -1,7 +1,10 @@
 #include <QDebug>
 
 #include "rover.h"
-
+/*
+#include "../trikRuntime/trikControl/include/trikControl/brick.h"
+using namespace trikControl;
+*/
 const QString logFifoPath="/tmp/dsp-detector.out.fifo";
 const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 

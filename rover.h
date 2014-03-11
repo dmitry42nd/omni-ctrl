@@ -1,15 +1,17 @@
 #pragma once
 
 #include <QObject>
+#include <QThread>
 #include <QTimer>
 #include <QVector2D>
 #include <QStringList>
 
 #include <cmath>
 
+#include "motor_controller.h"
+
 #include "log_fifo.h"
 #include "cmd_fifo.h"
-#include "motor_controller.h"
 
 #include "state_searching.h"
 #include "state_tracking.h"
@@ -18,7 +20,6 @@
 #include "state_releasing.h"
 
 #include <trikControl/brick.h>
-
 using namespace trikControl;
 
 class Rover : public QObject

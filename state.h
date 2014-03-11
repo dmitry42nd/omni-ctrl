@@ -2,12 +2,9 @@
 
 #include <QDebug>
 #include <QObject>
-#include <trikControl/brick.h>
 #include "enum_state.h"
 
 class Rover;
-
-using namespace trikControl;
 
 class State : public QObject
 {

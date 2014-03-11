@@ -6,7 +6,6 @@
 #include "state.h"
 
 class Rover;
-using namespace trikControl;
 
 class StateSqueezing : public State
 {

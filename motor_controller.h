@@ -1,13 +1,12 @@
 #pragma once
 
+#include <cmath>
 #include <QDebug>
 #include <QObject>
 #include <QTimer>
 #include <QScopedPointer>
 
-#include <cmath>
 #include <trikControl/brick.h>
-
 using namespace trikControl;
 
 class MotorController : public QObject

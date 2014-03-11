@@ -1,6 +1,7 @@
-//#include <QDebug>
+#include <QDebug>
 
 #include <cmath>
+
 #include "state_tracking.h"
 #include "rover.h"
 
