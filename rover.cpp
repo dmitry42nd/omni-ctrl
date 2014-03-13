@@ -233,11 +233,12 @@ void Rover::onGamepadPadUp(int padNum)
 void Rover::manualControlChasis(int speedL, int speedR)
 {
   m_motorControllerL.setActualSpeed(-speedL);
-  m_motorControllerR.setActualSpeed(-speedR);
+  m_motorControllerR.setActualSpeed(speedR);
 }
 
 void Rover::manualControlArm(int speed)
 {
+//  speed += speed == 0 ? 0 : sign(speed)*25;
   m_brick.motor(armServoL)->setPower(speed);
   m_brick.motor(armServoR)->setPower(-speed);
 }

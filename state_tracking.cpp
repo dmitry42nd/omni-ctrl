@@ -103,7 +103,7 @@ void StateTracking::runArm()
 
 //  qDebug() << "Arm: " << speed;
 
-  if (abs(speed)>15){ 
+  if (abs(speed)>10){ 
     m_chw = false;
     speed += sign(speed)*20;
   } else {
