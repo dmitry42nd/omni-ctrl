@@ -55,6 +55,9 @@ public slots:
   void restart();
 
   void manualMode();
+
+  void getDistance();
+
 private slots:
   void setBallColorData(int hue, int hueTol, int sat, int satTol, int val, int valTol);
   void setBallTargetData(int x, int angle, int mass);
@@ -86,6 +89,8 @@ private:
   MotorController  m_motorControllerL;
   MotorController  m_motorControllerR;
   QThread          m_motorsWorkerThread;
+  QTimer           m_rangeFinderTimer;
+
   State*           m_currentState;
   
   //target location data

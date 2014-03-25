@@ -11,6 +11,7 @@ const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 const QString armServoL = "JC2";
 const QString armServoR = "JC1";
 const QString handServo = "JE1";
+const QString rangeFinder = "JA6";
 
 const int speed = 100;
 const qreal PK = 0.42;
@@ -24,6 +25,7 @@ Rover::Rover(QThread *guiThread, QString configPath):
   m_motorControllerL(m_brick, "JM1", "JB4"),
   m_motorControllerR(m_brick, "M1", "JB3"),
   m_motorsWorkerThread(),
+  m_rangeFinderTimer(),
 //rover mode scenario:
   m_searching1(this, &m_tracking2, UntilMass),
   m_tracking2(this, &m_squeezing3, UntilLocked),
@@ -46,12 +48,15 @@ Rover::Rover(QThread *guiThread, QString configPath):
   connect(m_brick.gamepad(), SIGNAL(button(int,int)),        this, SLOT(onGamepadButtonChanged(int, int)));
   connect(m_brick.keys(),    SIGNAL(buttonPressed(int,int)), this, SLOT(onBrickButtonChanged(int,int)));
 
+  connect(&m_rangeFinderTimer, SIGNAL(timeout()), this, SLOT(getDistance()));
+
   m_motorControllerL.moveToThread(&m_motorsWorkerThread);
   m_motorControllerR.moveToThread(&m_motorsWorkerThread);
   m_motorControllerL.startAutoControl();
   m_motorControllerR.startAutoControl();
   m_motorsWorkerThread.start();
 
+  m_rangeFinderTimer.start(500);
 //init state is MANUAL_MODE:
   manualMode();
 }
@@ -255,6 +260,12 @@ void Rover::stopRover()
   m_brick.motor(armServoR)->powerOff();
   m_motorControllerL.setActualSpeed(0);
   m_motorControllerR.setActualSpeed(0);
+}
+
+void Rover::getDistance()
+{
+  qDebug() << "distance: " << m_brick.sensor(rangeFinder)->read();
+  //lol: m_brick.sensor(rangeFinder)->read(); - segmentation fault;
 }
 
 void Rover::restart()

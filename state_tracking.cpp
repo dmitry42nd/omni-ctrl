@@ -29,7 +29,7 @@ StateTracking::~StateTracking()
 
 void StateTracking::init()
 {
-  qDebug() << "STAЯT_TЯACKИNГ";
+  qDebug() << "START_TRACKING";
 
   m_zeroMass = m_rover->zeroMass();
   m_zeroY    = m_rover->zeroY();
@@ -165,7 +165,7 @@ void StateTracking::check()
       }
       break;
     case UntilLocked:
-        qDebug() << "TRAGET LOCKED";
+        qDebug() << "TARGET LOCKED";
 
         m_rover->stopRover();
 //stop()?
@@ -181,7 +181,7 @@ void StateTracking::check()
 
 void StateTracking::stop()
 {
-  qDebug() << "Tracking stoped";
+  //qDebug() << "Tracking stoped";
   disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(run()));
   disconnect(&m_locker, SIGNAL(timeout()), this, SLOT(check()));
   disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(massController()));
