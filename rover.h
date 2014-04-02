@@ -27,7 +27,7 @@ class Rover : public QObject
   Q_OBJECT
 
 public:
-  explicit Rover(QThread *guiThread, QString configPath);
+  explicit Rover(QThread *guiThread, QString configPath, QString soundPath, QString speech);
   virtual ~Rover();
 
   void roverMode();
@@ -61,7 +61,7 @@ public slots:
 private slots:
   void setBallColorData(int hue, int hueTol, int sat, int satTol, int val, int valTol);
   void setBallTargetData(int x, int angle, int mass);
-
+  void onGamepadWheel(int angle);
   void onGamepadPadDown(int padNum, int vx, int vy);
   void onGamepadPadUp(int padNum);
   void onGamepadButtonChanged(int buttonNum, int value);
@@ -82,6 +82,9 @@ private:
   enum { MANUAL_MODE,
          ROVER_MODE
   } movementMode;
+
+  const QString    m_soundPath;
+  const QString    m_speech;
 
   LogFifo          m_logFifo;
   CmdFifo          m_cmdFifo;

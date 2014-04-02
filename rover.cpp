@@ -8,9 +8,13 @@ using namespace trikControl;
 const QString logFifoPath="/tmp/dsp-detector.out.fifo";
 const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 
+/*
 const QString armServoL = "JC2";
 const QString armServoR = "JC1";
+*/
+const QString armMotor = "JM3";
 const QString handServo = "JE1";
+const QString handRotorServo = "JE2";
 const QString rangeFinder = "JA6";
 
 const int speed = 100;
@@ -18,12 +22,14 @@ const qreal PK = 0.42;
 const qreal IK = 0.006;
 const qreal DK = -0.009;
 
-Rover::Rover(QThread *guiThread, QString configPath):
+Rover::Rover(QThread *guiThread, QString configPath, QString soundPath, QString speech):
+  m_speech(speech),
+  m_soundPath(soundPath),
   m_logFifo(logFifoPath),
   m_cmdFifo(cmdFifoPath),
   m_brick(*guiThread, configPath),
-  m_motorControllerL(m_brick, "JM1", "JB4"),
-  m_motorControllerR(m_brick, "M1", "JB3"),
+  m_motorControllerL(m_brick, "JM2", "JB4"),
+  m_motorControllerR(m_brick, "JM1", "JB3"),
   m_motorsWorkerThread(),
   m_rangeFinderTimer(),
 //rover mode scenario:
@@ -48,15 +54,17 @@ Rover::Rover(QThread *guiThread, QString configPath):
   connect(m_brick.gamepad(), SIGNAL(button(int,int)),        this, SLOT(onGamepadButtonChanged(int, int)));
   connect(m_brick.keys(),    SIGNAL(buttonPressed(int,int)), this, SLOT(onBrickButtonChanged(int,int)));
 
-  connect(&m_rangeFinderTimer, SIGNAL(timeout()), this, SLOT(getDistance()));
-
   m_motorControllerL.moveToThread(&m_motorsWorkerThread);
   m_motorControllerR.moveToThread(&m_motorsWorkerThread);
   m_motorControllerL.startAutoControl();
   m_motorControllerR.startAutoControl();
   m_motorsWorkerThread.start();
 
+/*
+  connect(&m_rangeFinderTimer, SIGNAL(timeout()), this, SLOT(getDistance()));
   m_rangeFinderTimer.start(500);
+*/
+
 //init state is MANUAL_MODE:
   manualMode();
 }
@@ -80,6 +88,7 @@ void Rover::manualMode()
 
   connect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), this, SLOT(onGamepadPadDown(int,int,int)));
   connect(m_brick.gamepad(), SIGNAL(padUp(int)),       this, SLOT(onGamepadPadUp(int)));
+  connect(m_brick.gamepad(), SIGNAL(wheel(int)),       this, SLOT(onGamepadWheel(int)));
 }
 
 void Rover::roverMode()
@@ -89,6 +98,7 @@ void Rover::roverMode()
 
   disconnect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), this, SLOT(onGamepadPadDown(int,int,int)));
   disconnect(m_brick.gamepad(), SIGNAL(padUp(int)),       this, SLOT(onGamepadPadUp(int)));
+  disconnect(m_brick.gamepad(), SIGNAL(wheel(int)),       this, SLOT(onGamepadWheel(int)));
 
   connect(&m_searching1, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
   connect(&m_searching1, SIGNAL(failed()), this, SLOT(restart()));
@@ -126,6 +136,14 @@ void Rover::onGamepadButtonChanged(int buttonNum, int state)
       {
         roverMode();
       }
+      break;
+    case 3: 
+      m_brick.playSound(m_soundPath);
+      break;
+    case 4: 
+      QString cmd = QString("espeak -v russian_test -s 100 \"%1\"").arg(m_speech);
+      qDebug() << cmd;
+      m_brick.system(cmd);
       break;
   }
 }
@@ -225,9 +243,8 @@ void Rover::onGamepadPadUp(int padNum)
       manualControlChasis(0, 0);
       break;
     case 2:
-      m_brick.motor(armServoL)->powerOff();
-      m_brick.motor(armServoR)->powerOff();
-      m_brick.motor(handServo)->powerOff();
+      m_brick.motor(armMotor)->setPower(0);
+      m_brick.motor(handServo)->setPower(0  );
       break;
     default:
       qDebug() << "More than two pads is not provided";
@@ -235,17 +252,22 @@ void Rover::onGamepadPadUp(int padNum)
   }
 }
 
+void Rover::onGamepadWheel (int angle)
+{
+  qDebug() << "wheel " << angle;
+  m_brick.motor(handRotorServo)->setPower(angle);
+}
+
 void Rover::manualControlChasis(int speedL, int speedR)
 {
-  m_motorControllerL.setActualSpeed(-speedL);
-  m_motorControllerR.setActualSpeed(speedR);
+  m_motorControllerL.setActualSpeed(speedL);
+  m_motorControllerR.setActualSpeed(-speedR);
 }
 
 void Rover::manualControlArm(int speed)
 {
 //  speed += speed == 0 ? 0 : sign(speed)*25;
-  m_brick.motor(armServoL)->setPower(speed);
-  m_brick.motor(armServoR)->setPower(-speed);
+  m_brick.motor(armMotor)->setPower(-speed);
 }
 
 void Rover::manualControlHand(int speed)
@@ -256,8 +278,8 @@ void Rover::manualControlHand(int speed)
 void Rover::stopRover()
 {
   m_brick.motor(handServo)->powerOff();
-  m_brick.motor(armServoL)->powerOff();
-  m_brick.motor(armServoR)->powerOff();
+  m_brick.motor(armMotor)->setPower(0);
+  m_brick.motor(handRotorServo)->setPower(0);
   m_motorControllerL.setActualSpeed(0);
   m_motorControllerR.setActualSpeed(0);
 }
