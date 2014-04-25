@@ -8,8 +8,8 @@ const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 static const int period = 500;
 
 const QString redPort = "JM1"; //0x14
-const QString grePort = "JM3"; //0x17
 const QString bluPort = "JM2"; //0x15
+const QString grePort = "JM3"; //0x17
 const QString powPort = "M1";  //0x16
 
 LedTape::LedTape(QThread *guiThread, QString configPath):
