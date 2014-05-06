@@ -39,7 +39,7 @@ LedTape::~LedTape()
 
 int LedTape::convert(float c256)
 {
-  return -(int)((((float)(256-c256))/256.0f)*100.0f);
+  return 100-(int)((((float)(256-c256))/256.0f)*100.0f);
 }
 
 void LedTape::pause()
