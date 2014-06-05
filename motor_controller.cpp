@@ -18,10 +18,10 @@ void MotorController::doStep()
 {
 
 //dirty code for robot unstucking
-  int add = 15;
+  int add = 10;
   add = m_actualSpeed > 0 ? add : m_actualSpeed < 0 ? -add : 0;
 
-  if (abs(m_actualSpeed) < 25)
+  if (abs(m_actualSpeed) < 5)
     m_actualSpeed+=sign(m_actualSpeed);
 //
 
@@ -47,19 +47,7 @@ void MotorController::setActualSpeed(int speed)
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+//================================
 void MotorController::startSpeedometer()
 {
   m_brick.encoder(m_enc_port)->reset();

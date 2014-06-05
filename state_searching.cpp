@@ -4,7 +4,6 @@
 #include "rover.h"
 
 const int speed = 30;
-//const int speed = 0;
 
 StateSearching::StateSearching(Rover* rover, State* nextState, const StateMode mode) :
 State(rover, nextState, mode),

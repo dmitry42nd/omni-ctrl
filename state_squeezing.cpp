@@ -24,14 +24,14 @@ void StateSqueezing::init()
 void StateSqueezing::run()
 {
   m_rover->manualControlHand(100);
-  m_squeezeTimer.start(5000);
+  m_squeezeTimer.start(500);
 }
 
 void StateSqueezing::check()
 {
     qDebug() << "TARGET SQUEEЗEД";
 
-    m_rover->stopRover();
+//    m_rover->stopRover();
     stop();
 
     emit finished(m_nextState);

@@ -12,12 +12,12 @@ const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 const QString armServoL = "JC2";
 const QString armServoR = "JC1";
 */
-const QString armMotor = "JM3";
+const QString armMotor = "JM1";
 const QString handServo = "JE1";
 const QString handRotorServo = "JE2";
 const QString rangeFinder = "JA6";
 
-const int speed = 100;
+const int speed = 50;
 const qreal PK = 0.42;
 const qreal IK = 0.006;
 const qreal DK = -0.009;
@@ -29,7 +29,7 @@ Rover::Rover(QThread *guiThread, QString configPath, QString soundPath, QString 
   m_cmdFifo(cmdFifoPath),
   m_brick(*guiThread, configPath),
   m_motorControllerL(m_brick, "JM2", "JB4"),
-  m_motorControllerR(m_brick, "JM1", "JB3"),
+  m_motorControllerR(m_brick, "JM3", "JB3"),
   m_motorsWorkerThread(),
   m_rangeFinderTimer(),
 //rover mode scenario:
@@ -154,7 +154,7 @@ void Rover::onBrickButtonChanged(int buttonCode, int state)
 
   switch (buttonCode)
   {
-    case 28:  
+    case 108:  
       m_cmdFifo.write("detect\n");
       break;
     case 139:  
@@ -294,6 +294,7 @@ void Rover::restart()
 {
   qDebug() << "reseting";
   resetScenario();
+
   m_currentState->init();
 }
 
@@ -301,7 +302,10 @@ void Rover::resetScenario()
 {
   m_currentState=&m_searching1;
 
+  connect(&m_searching1, SIGNAL(finished(State*)), this, SLOT(nextStep(State*)));
+  connect(&m_searching1, SIGNAL(failed()), this, SLOT(restart()));
+
   m_brick.motor(handServo)->setPower(-100);
-  QTimer::singleShot(3000, this, SLOT(stopRover()));
+  stopRover();
 }
 

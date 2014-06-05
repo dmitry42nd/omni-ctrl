@@ -26,8 +26,8 @@ void StateReleasing::run()
 
 void StateReleasing::runChasisLeft()
 {
-  m_rover->manualControlArm(50);
-  m_rover->manualControlChasis(-40, 40);
+  m_rover->manualControlArm(100);
+  m_rover->manualControlChasis(-30, 30);
   QTimer::singleShot(2500, this, SLOT(runHand()));
 }
 
@@ -35,13 +35,12 @@ void StateReleasing::runHand()
 {
   m_rover->stopRover();
   m_rover->manualControlHand(-100);
-  QTimer::singleShot(5000, this, SLOT(runChasisRight()));
+  QTimer::singleShot(500, this, SLOT(runChasisRight()));
 }
 
 void StateReleasing::runChasisRight()
 {
-  m_rover->manualControlArm(-50);
-  m_rover->manualControlChasis(40, -40);
+  m_rover->manualControlChasis(30, -30);
   QTimer::singleShot(2500, this, SLOT(check()));
 }
 

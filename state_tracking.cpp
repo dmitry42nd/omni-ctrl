@@ -35,6 +35,8 @@ void StateTracking::init()
   m_zeroY    = m_rover->zeroY();
   m_zeroX    = m_rover->zeroX();
 
+  m_locker.stop();
+
   switch (m_mode)
   {
     case UntilMass:
@@ -82,10 +84,10 @@ void StateTracking::runChasis()
     int speed = powerProportional(tgtMass, 0, m_zeroMass, 100); // back/forward based on ball size
     int backSpeed = powerProportional(tgtY, -100, m_zeroY, 100); // move back/forward if ball leaves range
 
-    int speedL = (-(speed+backSpeed)+yaw)/2;
-    int speedR = (-(speed+backSpeed)-yaw)/2;
+    int speedL = (-(speed+backSpeed)+yaw)/8;
+    int speedR = (-(speed+backSpeed)-yaw)/8;
 
-//    qDebug() << "Chasis l: " << speedL << "x r: " << speedR;
+    qDebug() << "Chasis l: " << speedL << "x r: " << speedR;
     m_rover->manualControlChasis(speedL, speedR);
   }
   else
@@ -169,6 +171,7 @@ void StateTracking::check()
 
         m_rover->stopRover();
 //stop()?
+        m_locker.stop();
         disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(massController()));
         disconnect(&m_locker, SIGNAL(timeout()), this, SLOT(check()));
         disconnect(m_rover, SIGNAL(locationChanged()), this, SLOT(run()));
