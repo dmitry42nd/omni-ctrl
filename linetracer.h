@@ -52,10 +52,12 @@ private:
     QThread          m_motorsWorkerThread;
 
     //target location data
-    int m_tgtX;
-    int m_prevTgtX;
-    int m_tgtAngle;
-    int m_tgtMass;
+    int m_X;
+    int m_oldX;
+    int m_zeroX;
+
+    int m_angle;
+    int m_size;
 
     //target HSV data
     int m_hue;

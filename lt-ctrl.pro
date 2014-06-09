@@ -1,12 +1,12 @@
-TRIKCONTROL_BINDIR = ../trikRuntime/bin/release
+TRIKCONTROL_BINDIR = ../trikRuntime/bin/arm-release
 TRIKCONTROL_DIR = ../trikRuntime/trikControl
 
-QT       += core
-QT       += network
-QT       += gui
+QT += core
+QT += network
+QT += gui
 TARGET = lt-ctrl
-CONFIG   += console
-CONFIG   -= app_bundle
+CONFIG += console
+CONFIG -= app_bundle
 
 TEMPLATE = app
 
@@ -32,4 +32,3 @@ HEADERS += \
            log_fifo.h \
            cmd_fifo.h \
            motor_controller.h 
-

@@ -5,12 +5,10 @@
 const QString logFifoPath="/tmp/dsp-detector.out.fifo";
 const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 
-const int speed = 100;
-const qreal stopK = 1;
-const qreal PK = 0.42;
-const qreal IK = 0.006;
+const int SPEED = 60;
+const qreal PK = 0.35;
+const qreal IK = 0.003;
 const qreal DK = -0.009;
-const qreal encC = 1/(334*34); //1 : (num of points of encoder wheel * reductor ratio)
 
 Linetracer::Linetracer(QThread *guiThread, QString configPath):
   m_logFifo(logFifoPath),
@@ -18,25 +16,24 @@ Linetracer::Linetracer(QThread *guiThread, QString configPath):
   m_brick(*guiThread, configPath),
   m_motorControllerL(m_brick, "JM1", "JB4"),
   m_motorControllerR(m_brick, "JM3", "JB3"),
-  m_motorsWorkerThread()
+  m_motorsWorkerThread(),
+  m_zeroX(-20)
 {
   m_logFifo.open();
   m_cmdFifo.open();
 
-
   qDebug() << "LINETRACER_STARTS";
+
   connect(&m_logFifo, SIGNAL(lineColorDataParsed(int, int, int, int, int, int)),  
           this, SLOT(setLineColorData(int, int, int, int, int, int)));
-  connect(m_brick.gamepad(), SIGNAL(button(int,int)),        this, SLOT(onGamepadButtonChanged(int, int)));
   connect(m_brick.keys(),    SIGNAL(buttonPressed(int,int)), this, SLOT(onBrickButtonChanged(int,int)));
 
   m_motorControllerL.moveToThread(&m_motorsWorkerThread);
   m_motorControllerR.moveToThread(&m_motorsWorkerThread);
-
   m_motorControllerL.startAutoControl();
   m_motorControllerR.startAutoControl();
-
   m_motorsWorkerThread.start();
+
 //init state is MANUAL_MODE:
   manualMode();
 }
@@ -116,15 +113,22 @@ void Linetracer::onBrickButtonChanged(int buttonCode, int state)
 
   switch (buttonCode)
   {
-    case 28:  
+    case 62:  
       m_cmdFifo.write("detect\n");
       break;
-    case 105:  
+    case 60:  
       if(movementMode != LINETRACE_MODE)
       {
         linetraceMode();
-        break;
-      } 
+      } else
+      {
+        manualMode();
+      }
+      break;
+    case 64:  
+      m_zeroX = m_X;
+      qDebug() << "zero x: " << m_zeroX;
+      break;
     default:
       manualMode();
   }
@@ -138,19 +142,97 @@ void Linetracer::setLineColorData(int hue, int hueTol, int sat, int satTol, int 
                                                 .arg(satTol)
                                                 .arg(val)
                                                 .arg(valTol);
-//  qDebug() << s;
+  qDebug() << s;
   m_cmdFifo.write(s);
 }
 
-void Linetracer::setLineTargetData(int x, int angle, int mass)
-{
-//  qDebug("line x, angle: %d, %d", x, angle);
-  m_prevTgtX = m_tgtX;
-  m_tgtX     = x;
-  m_tgtAngle = angle;
-  m_tgtMass  = mass;
 
-  m_motorControllerL.setActualSpeed(x);
-  m_motorControllerR.setActualSpeed(x);
+static int m_max(int a, int b)
+{
+  return a >= b ? a : b;
+}
+
+
+static int m_min(int a, int b)
+{
+  return a <= b ? a : b;
+}
+
+static int saturate(int min, int val, int max)
+{
+  return (val <= max) ? ((val >= min) ? val : min) : max;
+}
+
+
+static int powerProportional(int _val, int _min, int _zero, int _max)
+{
+  int adj = _val - _zero;
+  if (adj > 0)
+  {
+    if (_val >= _max)
+      return 100;
+    else
+      return (+100*(_val-_zero)) / (_max-_zero); // _max!=_zero, otherwise (_val>=_max) matches
+  }
+  else if (adj < 0)
+  {
+    if (_val <= _min)
+      return -100;
+    else
+      return (-100*(_val-_zero)) / (_min-_zero); // _min!=_zero, otherwise (_val<=_min) matches
+  }
+  else
+    return 0;
+}
+
+void Linetracer::setLineTargetData(int x, int angle, int size)
+{
+  qDebug("xyz: %d, %d, %d", x, angle, size);
+
+  m_oldX  = m_X;
+  m_X     = powerProportional(x, -100, m_zeroX, 100);
+  m_angle = angle;
+  m_size  = size;
+
+  if(abs(x) < 10 && abs(m_oldX) < 10) //just move straight
+  {
+    m_motorControllerL.setActualSpeed(SPEED);
+    m_motorControllerR.setActualSpeed(SPEED);
+  } 
+  else
+  {    
+    float P, I, D;
+
+    P = x * PK;
+    D = (x - m_oldX) * DK;
+    I = (x + m_oldX) * IK;
+
+    float yaw;
+    yaw = P + I + D;
+
+  #if 1
+    int speedL = SPEED+yaw;  
+    int speedR = SPEED-yaw;
+
+    int maxSpeed = m_max(speedL, speedR);
+    int minSpeed = m_min(speedL, speedR);
+
+    if (maxSpeed > 100)
+    {
+      speedL = saturate(0, speedL - (maxSpeed - 100),100);
+      speedR = saturate(0, speedR - (maxSpeed - 100),100);
+    }
+
+    if (minSpeed < -100)
+    {
+      speedL = saturate(0, speedL - (minSpeed + 100),100);
+      speedR = saturate(0, speedR - (minSpeed + 100),100);
+    }
+  #endif
+
+    qDebug("lr: %d, %d", speedL, speedR);
+    m_motorControllerL.setActualSpeed(speedL);
+    m_motorControllerR.setActualSpeed(speedR);
+  }
 }
 
