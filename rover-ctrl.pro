@@ -25,24 +25,14 @@ SOURCES += main.cpp \
            rover.cpp \
            log_fifo.cpp \
            cmd_fifo.cpp \
-           motor_controller.cpp \
-           state.cpp \
-           state_searching.cpp \
-           state_tracking.cpp \
-           state_squeezing.cpp \
-           state_releasing.cpp \
-           state_finished.cpp
+           rover_engine.cpp \
+           rover_manual.cpp \
+           rover_logic.cpp
 
 HEADERS += \
            rover.h \
            log_fifo.h \
            cmd_fifo.h \
-           motor_controller.h \
-           enum_state.h \
-           state.h \
-           state_searching.h \
-           state_tracking.h \
-           state_squeezing.h \
-           state_releasing.h \
-           state_finished.h
-
+           rover_engine.h \
+           rover_manual.h \
+           rover_logic.h
