@@ -2,6 +2,13 @@
 
 #include "rover.h"
 
+const int key1 = 60;
+const int key2 = 61;
+const int key3 = 62;
+const int key4 = 63;
+const int key5 = 64;
+const int key6 = 65;
+
 const QString logFifoPath="/tmp/dsp-detector.out.fifo";
 const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 
@@ -17,18 +24,16 @@ Rover::Rover(QThread *guiThread, QString configPath, QString soundPath, QString 
   m_cmdFifo(cmdFifoPath),
   m_brick(*guiThread, configPath),
   m_engine(m_brick, lPort, rPort, armPort, handPort),
-  m_manual(),
-  m_logic()
+  m_manual(m_engine),
+  m_logic(m_engine)
 {
   qDebug() << "ROVER_STARTS";
 
-/*
-  connect(&m_logFifo, SIGNAL(ballColorDataParsed(int, int, int, int, int, int)),  
-          this,         SLOT(setBallColorData(int, int, int, int, int, int)));
-  connect(&m_logFifo, SIGNAL(ballTargetDataParsed(int, int, int)), this, SLOT(setBallTargetData(int, int, int)));
+  void locationParsed(LocationData);
+  void colorParsed(ColorData);
 
-  connect(m_brick.gamepad(), SIGNAL(button(int,int)),        this, SLOT(onGamepadButtonChanged(int, int)));
-*/
+  connect(&m_logFifo, SIGNAL(colorParsed(ColorData)),       this, SLOT(setColor(ColorData)));
+  connect(&m_logFifo, SIGNAL(locationParsed(LocationData)), this, SLOT(setLocation(LocationData)));
 
   connect(m_brick.keys(),    SIGNAL(buttonPressed(int,int)), this, SLOT(onBrickButtonChanged(int,int)));
 
@@ -44,10 +49,17 @@ void Rover::manualMode()
   qDebug() << "MANUAL_MODE";
   movementMode = MANUAL_MODE;
 
-  connect(&m_manual, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
-  connect(&m_manual, SIGNAL(moveArm(int)), &m_engine, SLOT(moveArm(int)));
-  connect(&m_manual, SIGNAL(moveHand(int)), &m_engine, SLOT(moveHand(int)));
+  m_logic.stop();
+/*
+  disconnect(&m_logic, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
+  disconnect(&m_logic, SIGNAL(moveArm(int)),        &m_engine, SLOT(moveArm(int)));
+  disconnect(&m_logic, SIGNAL(moveHand(int)),       &m_engine, SLOT(moveHand(int)));
+  disconnect(&m_logic, SIGNAL(stopSignal()),        &m_engine, SLOT(stop()));
 
+  connect(&m_manual, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
+  connect(&m_manual, SIGNAL(moveArm(int)),        &m_engine, SLOT(moveArm(int)));
+  connect(&m_manual, SIGNAL(moveHand(int)),       &m_engine, SLOT(moveHand(int)));
+*/
   connect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), &m_manual, SLOT(onPadDown(int,int,int)));
   connect(m_brick.gamepad(), SIGNAL(padUp(int)),       &m_manual, SLOT(onPadUp(int)));
   connect(m_brick.gamepad(), SIGNAL(wheel(int)),       &m_manual, SLOT(onWheel(int)));
@@ -57,14 +69,21 @@ void Rover::roverMode()
 {
   qDebug() << "ROVER_MODE";
   movementMode = ROVER_MODE;
-
+/*
   disconnect(&m_manual, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
-  disconnect(&m_manual, SIGNAL(moveArm(int)), &m_engine, SLOT(moveArm(int)));
-  disconnect(&m_manual, SIGNAL(moveHand(int)), &m_engine, SLOT(moveHand(int)));
-
+  disconnect(&m_manual, SIGNAL(moveArm(int)),        &m_engine, SLOT(moveArm(int)));
+  disconnect(&m_manual, SIGNAL(moveHand(int)),       &m_engine, SLOT(moveHand(int)));
+*/
   disconnect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), &m_manual, SLOT(onPadDown(int,int,int)));
   disconnect(m_brick.gamepad(), SIGNAL(padUp(int)),       &m_manual, SLOT(onPadUp(int)));
   disconnect(m_brick.gamepad(), SIGNAL(wheel(int)),       &m_manual, SLOT(onWheel(int)));
+/*
+  connect(&m_logic, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
+  connect(&m_logic, SIGNAL(moveArm(int)),        &m_engine, SLOT(moveArm(int)));
+  connect(&m_logic, SIGNAL(moveHand(int)),       &m_engine, SLOT(moveHand(int)));
+  connect(&m_logic, SIGNAL(stopSignal()),        &m_engine, SLOT(stop()));
+*/
+  m_logic.start();
 }
 
 void Rover::onBrickButtonChanged(int buttonCode, int state)
@@ -73,10 +92,10 @@ void Rover::onBrickButtonChanged(int buttonCode, int state)
 
   switch (buttonCode)
   {
-    case 108:  
+    case key1:  
       m_cmdFifo.write("detect\n");
       break;
-    case 139:  
+    case key2:  
       if(movementMode != ROVER_MODE)
       {
         roverMode();
@@ -86,7 +105,7 @@ void Rover::onBrickButtonChanged(int buttonCode, int state)
         manualMode();
       }
       break;
-    case 105:
+    case key3:
       qDebug() << "Set target zero location";
       m_logic.setZeroLoc();
       break;
@@ -112,6 +131,6 @@ void Rover::setColor(ColorData _targetCol)
 
 void Rover::setLocation(LocationData _targetLoc)
 {
-  qDebug("Ball x, y, s: %d, %d, %d", _targetLoc.x, _targetLoc.y, _targetLoc.s);
+//  qDebug("Ball x, y, s: %d, %d, %d", _targetLoc.x, _targetLoc.y, _targetLoc.s);
   m_logic.setCurrentLoc(_targetLoc);
 }

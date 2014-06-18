@@ -2,7 +2,8 @@
 
 #include "rover_manual.h"
 
-RoverManual::RoverManual()
+RoverManual::RoverManual(const RoverEngine& _engine):
+m_engine(_engine)
 {}
 
 RoverManual::~RoverManual()
@@ -20,11 +21,11 @@ void RoverManual::onPadDown(int _pad, int _x, int _y)
   switch (_pad)
   {
     case 1:
-      emit moveChasis(_y+_x, _y-_x);
+      m_engine.moveChasis(_y+_x, _y-_x);
       break;
     case 2:
-      emit moveArm(_y);
-      emit moveHand(_x);
+      m_engine.moveArm(_y);
+      m_engine.moveHand(_x);
       break;
     default:
       qDebug() << "More than two pads is not provided";
@@ -37,11 +38,11 @@ void RoverManual::onPadUp(int _pad)
   switch (_pad)
   {
     case 1:
-      emit moveChasis(0, 0);
+      m_engine.moveChasis(0, 0);
       break;
     case 2:
-      emit moveArm(0);
-      emit moveHand(0);
+      m_engine.moveArm(0);
+      m_engine.moveHand(0);
       break;
     default:
       qDebug() << "More than two pads is not provided";

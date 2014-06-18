@@ -18,8 +18,6 @@ signals:
   void closed();
 
 public slots:
-  void open();
-  void close();
   void write(QString cmd);
 
 

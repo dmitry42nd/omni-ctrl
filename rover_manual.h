@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <trikControl/brick.h>
+#include "rover_engine.h"
 
 using namespace trikControl;
 
@@ -12,7 +13,7 @@ class RoverManual : public QObject
   Q_OBJECT
 
 public:
-  explicit RoverManual();
+  explicit RoverManual(const RoverEngine& _engine);
   virtual ~RoverManual();
 
 public slots:
@@ -22,7 +23,11 @@ public slots:
   void onWheel(int _angle);
 
 signals:
+/*
   void moveChasis(int _lS, int _rS);
   void moveArm(int _s);
   void moveHand(int _s);
+*/
+private:
+  const RoverEngine& m_engine;
 };

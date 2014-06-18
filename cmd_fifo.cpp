@@ -12,14 +12,6 @@
 
 CmdFifo::CmdFifo(const QString _fifoPath):
 m_fifoFile(_fifoPath)
-{}
-
-CmdFifo::~CmdFifo()
-{
-  close();
-}
-
-void CmdFifo::open()
 {
   if(!(m_fifoFile.open(QIODevice::WriteOnly|QIODevice::Truncate|QIODevice::Unbuffered|QIODevice::Text)))
   {
@@ -29,7 +21,7 @@ void CmdFifo::open()
   emit opened();
 }
 
-void CmdFifo::close()
+CmdFifo::~CmdFifo()
 {
   m_fifoFile.close();
 
