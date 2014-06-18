@@ -6,9 +6,9 @@
 #define CLOCK_INTERVAL 50
 #define LOCKER_INTERVAL 1000
 
-const float xPK = 1;
+const float xPK = 0.8;
 const float xIK = 0.005;
-const float xDK = 2.3;
+const float xDK = 0.3;
 
 RoverLogic::RoverLogic(const RoverEngine& _engine):
 m_engine(_engine),
@@ -69,10 +69,8 @@ void RoverLogic::loop()
       track();
       break;
     case COP:
-      cop();
       break;
     case RELEASE:
-      release();
       break;
     default:
       stop();
@@ -98,7 +96,7 @@ void RoverLogic::trackChasis()
   if (m_chw || m_currentLoc.s < m_zeroLoc.s/3)
   {
     int x = powerProportional(m_currentLoc.x, -100, m_zeroLoc.x, 100);
-    int yaw = xPK*m_currentLoc.x + xIK*(m_currentLoc.x + m_lastX) + xDK*(m_currentLoc.x - m_lastX);
+    int yaw = xPK*m_currentLoc.x;// + xIK*(m_currentLoc.x + m_lastX) + xDK*(m_currentLoc.x - m_lastX);
     int speed = powerProportional(m_currentLoc.s, 0, m_zeroLoc.s, 100); // back/forward based on ball size
     int backSpeed = powerProportional(m_currentLoc.y, -100, m_zeroLoc.y, 100); // move back/forward if ball leaves range
     m_lastX = x;
@@ -121,10 +119,9 @@ void RoverLogic::trackArm()
 {
   int speed = powerProportional(m_currentLoc.y, -100, m_zeroLoc.y, 100);
 
-  if (abs(speed)>10){
+  if (abs(speed)>5){
     m_chw = false;
   } else {
-    speed = 0;
     m_chw = true;
   }
 
@@ -156,21 +153,50 @@ void RoverLogic::readyCop()
   disconnect(&m_locker, SIGNAL(timeout()), this, SLOT(readyCop()));
   m_locker.stop();
   m_state=COP;
+
+  cop();
 }
 
 void RoverLogic::cop()
 {
+  qDebug() << "COP";
+
   m_engine.moveChasis(0, 0);
   m_engine.moveArm(0);
   m_engine.moveHand(90);
+
+  m_state=RELEASE;
+  release();
 }
 
 void RoverLogic::release()
 {
+  qDebug() << "RELEASE";
+
+  QTimer::singleShot(500,  this, SLOT(turnLeft()));  
+  QTimer::singleShot(2500, this, SLOT(doRelease()));
+  QTimer::singleShot(3000, this, SLOT(turnRight()));
+  QTimer::singleShot(5000, this, SLOT(stop()));
+
+}
+
+void RoverLogic::turnLeft()
+{
+  m_engine.moveArm(60);
+  m_engine.moveChasis(-30, 30);
+}
+
+void RoverLogic::doRelease()
+{
+  m_engine.moveArm(0);
+  m_engine.moveChasis(0, 0);
   m_engine.moveHand(-90);
 }
 
-
+void RoverLogic::turnRight()
+{
+  m_engine.moveChasis(30, -30);
+}
 
 int RoverLogic::sign(int _v)
 {

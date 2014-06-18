@@ -31,9 +31,10 @@ private slots:
 
   void readyCop();
     void cop();
-
-  void readyRelease();
     void release();
+      void turnRight();
+      void doRelease();
+      void turnLeft();
 
 private:
   void search();
