@@ -6,9 +6,9 @@
 #define CLOCK_INTERVAL 50
 #define LOCKER_INTERVAL 1000
 
-const float xPK = 0.8;
+const float xPK = 0.3;
 const float xIK = 0.005;
-const float xDK = 0.3;
+const float xDK = 0.03;
 
 RoverLogic::RoverLogic(const RoverEngine& _engine):
 m_engine(_engine),
@@ -97,16 +97,16 @@ void RoverLogic::trackChasis()
   {
     int x = powerProportional(m_currentLoc.x, -100, m_zeroLoc.x, 100);
     int yaw = xPK*m_currentLoc.x;// + xIK*(m_currentLoc.x + m_lastX) + xDK*(m_currentLoc.x - m_lastX);
-    int speed = powerProportional(m_currentLoc.s, 0, m_zeroLoc.s, 100); // back/forward based on ball size
-    int backSpeed = powerProportional(m_currentLoc.y, -100, m_zeroLoc.y, 100); // move back/forward if ball leaves range
+    int speed = powerProportional(m_currentLoc.s, 0, m_zeroLoc.s+10, 100); // back/forward based on ball size
+
     m_lastX = x;
 
-    int speedL = (-(speed+backSpeed)+yaw)/2;
-    int speedR = (-(speed+backSpeed)-yaw)/2;
+    int speedL = (-speed+yaw)/2;
+    int speedR = (-speed-yaw)/2;
 
-    qDebug() << "Chasis l: " << speedL << "x r: " << speedR;
+    qDebug() << "Chasis l: " << sign(speedL)*5+speedL << "x r: " << sign(speedR)*5+speedR;
 
-    m_engine.moveChasis(speedL, speedR);
+    m_engine.moveChasis(sign(speedL)*5+speedL, sign(speedR)*5+speedR);
   }
   else
   {
@@ -119,7 +119,7 @@ void RoverLogic::trackArm()
 {
   int speed = powerProportional(m_currentLoc.y, -100, m_zeroLoc.y, 100);
 
-  if (abs(speed)>5){
+  if (abs(speed)>10){
     m_chw = false;
   } else {
     m_chw = true;
@@ -176,7 +176,7 @@ void RoverLogic::release()
   QTimer::singleShot(500,  this, SLOT(turnLeft()));  
   QTimer::singleShot(2500, this, SLOT(doRelease()));
   QTimer::singleShot(3000, this, SLOT(turnRight()));
-  QTimer::singleShot(5000, this, SLOT(stop()));
+  QTimer::singleShot(5000, this, SLOT(start()));
 
 }
 

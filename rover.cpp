@@ -2,9 +2,9 @@
 
 #include "rover.h"
 
-const int key1 = 60;
-const int key2 = 61;
-const int key3 = 62;
+const int key1 = 139;
+const int key2 = 103;
+const int key3 = 105;
 const int key4 = 63;
 const int key5 = 64;
 const int key6 = 65;
@@ -12,9 +12,9 @@ const int key6 = 65;
 const QString logFifoPath="/tmp/dsp-detector.out.fifo";
 const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 
-const QString armPort = "JM2";
-const QString lPort   = "JM4";
-const QString rPort   = "JM3";
+const QString armPort = "JM3";
+const QString lPort   = "JM1";
+const QString rPort   = "JM4";
 
 const QString handPort  = "JE1";
 const QString rotorPort = "JE2";
@@ -108,9 +108,6 @@ void Rover::onBrickButtonChanged(int buttonCode, int state)
     case key3:
       qDebug() << "Set target zero location";
       m_logic.setZeroLoc();
-      break;
-    case 103:
-      qDebug() << "!)#";
       break;
     default:
       manualMode();
