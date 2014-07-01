@@ -50,16 +50,7 @@ void Rover::manualMode()
   movementMode = MANUAL_MODE;
 
   m_logic.stop();
-/*
-  disconnect(&m_logic, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
-  disconnect(&m_logic, SIGNAL(moveArm(int)),        &m_engine, SLOT(moveArm(int)));
-  disconnect(&m_logic, SIGNAL(moveHand(int)),       &m_engine, SLOT(moveHand(int)));
-  disconnect(&m_logic, SIGNAL(stopSignal()),        &m_engine, SLOT(stop()));
 
-  connect(&m_manual, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
-  connect(&m_manual, SIGNAL(moveArm(int)),        &m_engine, SLOT(moveArm(int)));
-  connect(&m_manual, SIGNAL(moveHand(int)),       &m_engine, SLOT(moveHand(int)));
-*/
   connect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), &m_manual, SLOT(onPadDown(int,int,int)));
   connect(m_brick.gamepad(), SIGNAL(padUp(int)),       &m_manual, SLOT(onPadUp(int)));
   connect(m_brick.gamepad(), SIGNAL(wheel(int)),       &m_manual, SLOT(onWheel(int)));
@@ -69,20 +60,11 @@ void Rover::roverMode()
 {
   qDebug() << "ROVER_MODE";
   movementMode = ROVER_MODE;
-/*
-  disconnect(&m_manual, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
-  disconnect(&m_manual, SIGNAL(moveArm(int)),        &m_engine, SLOT(moveArm(int)));
-  disconnect(&m_manual, SIGNAL(moveHand(int)),       &m_engine, SLOT(moveHand(int)));
-*/
+
   disconnect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), &m_manual, SLOT(onPadDown(int,int,int)));
   disconnect(m_brick.gamepad(), SIGNAL(padUp(int)),       &m_manual, SLOT(onPadUp(int)));
   disconnect(m_brick.gamepad(), SIGNAL(wheel(int)),       &m_manual, SLOT(onWheel(int)));
-/*
-  connect(&m_logic, SIGNAL(moveChasis(int,int)), &m_engine, SLOT(moveChasis(int,int)));
-  connect(&m_logic, SIGNAL(moveArm(int)),        &m_engine, SLOT(moveArm(int)));
-  connect(&m_logic, SIGNAL(moveHand(int)),       &m_engine, SLOT(moveHand(int)));
-  connect(&m_logic, SIGNAL(stopSignal()),        &m_engine, SLOT(stop()));
-*/
+
   m_logic.start();
 }
 
