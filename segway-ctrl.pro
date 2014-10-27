@@ -2,6 +2,8 @@ TRIKCONTROL_BINDIR = ../trikRuntime/bin/arm-release
 TRIKCONTROL_DIR = ../trikRuntime/trikControl
 INCLUDE_DIR = include
 SRC_DIR = src
+MOC_DIR = .moc
+OBJECTS_DIR = .obj
 
 QT       += core
 QT       += network
@@ -14,7 +16,6 @@ TEMPLATE = app
 
 INCLUDEPATH = \
         $$INCLUDE_DIR \
-        $$SRC_DIR \
         $$PWD \
         $$BOOST_DIR \
         $$TRIKCONTROL_DIR/include \
