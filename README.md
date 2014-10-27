@@ -1,2 +1,3 @@
-omni-ctrl
-=========
+Program: segway
+Author : dsoldatov@trikset.com
+
