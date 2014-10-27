@@ -1,5 +1,6 @@
 #pragma once
 #include <trikControl/brick.h>
+#include <QTimer>
 
 using namespace trikControl;
 
@@ -9,13 +10,15 @@ class Segway : public QObject
 
 public:
   explicit Segway(QThread *guiThread, QString configPath, QString startDirPath);
-  virtual ~Segway();
+  virtual ~Segway() {};
 
 //slots:
 
 //signals:
 
 private:
-  Brick m_brick;
+  Brick  m_brick;
+  QTimer m_ticker;
 
+  void dance();
 };

@@ -8,7 +8,7 @@ OBJECTS_DIR = .obj
 QT       += core
 QT       += network
 QT       += gui
-TARGET = rover-ctrl
+TARGET = segway
 CONFIG   += console
 CONFIG   -= app_bundle
 

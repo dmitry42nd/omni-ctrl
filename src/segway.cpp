@@ -13,7 +13,10 @@ Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath):
   m_brick(*guiThread, configPath, startDirPath)
 {
   qDebug() << "SEGWAY_STARTS";
+  
+  dance();
 }
 
-Segway::~Segway()
-{}
+void Segway::dance()
+{
+}
