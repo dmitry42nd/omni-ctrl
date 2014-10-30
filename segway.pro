@@ -1,13 +1,16 @@
 TRIKCONTROL_BINDIR = ../trikRuntime/bin/arm-release
 TRIKCONTROL_DIR = ../trikRuntime/trikControl
+
 INCLUDE_DIR = include
-SRC_DIR = src
-MOC_DIR = .moc
+SRC_DIR     = src
+
+MOC_DIR     = .moc
 OBJECTS_DIR = .obj
 
 QT       += core
 QT       += network
 QT       += gui
+
 TARGET = segway
 CONFIG   += console
 CONFIG   -= app_bundle

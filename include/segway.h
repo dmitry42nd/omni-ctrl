@@ -10,15 +10,32 @@ class Segway : public QObject
 
 public:
   explicit Segway(QThread *guiThread, QString configPath, QString startDirPath);
-  virtual ~Segway() {};
+  virtual ~Segway();
 
-//slots:
+private slots:
+  void onBtnPressed(int code, int state);
 
+  void startDriftAcc();
+  void stopDriftAcc();
+  void startDancing();
+  
+  void accDrift();
+  void dance();
+  
 //signals:
 
 private:
   Brick  m_brick;
-  QTimer m_ticker;
+  QTimer m_mainTicker;
+  QTimer m_gdcTicker; //Gyro (zero) drift controller
+  
+  double m_acceData;
+  double m_gyroData;
+  double m_outData;
+  double m_outDataOld;
 
-  void dance();
+  double m_offset;  
+  int m_gyroGain;
+  int m_gyroDrift;
+  int m_gyroDriftCnt;
 };
