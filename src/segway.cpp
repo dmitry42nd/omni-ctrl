@@ -7,11 +7,11 @@
 const QString logFifoPath="/tmp/dsp-detector.out.fifo";
 const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 
-const QString l = "M1";
-const QString r = "M3";
+const QString l = "M3";
+const QString r = "M4";
 
-const int gyroAxis = 1;
-const int acceAxis = 1;
+const int gyroAxis = 0;
+const int acceAxis = 2;
 
 const double G = 4096;
 const double K = 0.025; //0.02 
