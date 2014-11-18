@@ -94,28 +94,26 @@ void Segway::startDancing()
   m_mainTicker.start(mainPeriod);
 }
 
-const double pk = 1.1;
-const double dk = 2;
-const double ik = 0.005;
+const double pk = 4.5;
+const double dk = 5;
+const double ik = 1;
 
 void Segway::dance()
 {
-  int gyroDataGained = m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift;
-  int gyroData = abs(gyroDataGained) > m_gyroGain ? gyroDataGained : 0;
+  int gyroData = m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift;
   int acceData = m_brick.accelerometer()->read()[acceAxis];
  
-  m_gyroData += gyroData*parToDeg*mainPeriodS;
+  m_gyroData = gyroData*parToDeg*mainPeriodS;
   m_acceData  = asin(sat(acceData/G, 1))*180/3.14159;
   
-  m_outData = ((1-K)*m_gyroData + K*m_acceData) - m_offset;
-  int yaw  = 2*(sgn(m_outData)*minPow + m_outData*pk + (m_outData-m_outDataOld)*dk + (m_outData+m_outDataOld)*ik);
+  m_outData = ((1-K)*(m_outData+ m_gyroData) + K*m_acceData);
+  int yaw  = (sgn(m_outData)*minPow + 2*m_outData*pk + (m_outData-m_outDataOld)*dk + (m_outData+m_outDataOld)*ik);
   m_outDataOld = m_outData;
 
-  if(m_offset != 0) {
-    m_brick.motor(l)->setPower(yaw);
-    m_brick.motor(r)->setPower(yaw);
-  }
+  m_brick.motor(l)->setPower(yaw);
+  m_brick.motor(r)->setPower(yaw);
+
   
-  qDebug() << m_outData;
+  qDebug() << m_outData << " " << yaw;
 }
 
