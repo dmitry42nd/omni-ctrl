@@ -26,7 +26,7 @@ INCLUDEPATH = \
 LIBS += -L$$TRIKCONTROL_BINDIR -ltrikControl -ltrikKernel
 
 !macx {
-        QMAKE_LFLAGS += -Wl,-O1,-rpath,.
+        QMAKE_LFLAGS += -Wl,-O3,-rpath,.
         QMAKE_CXXFLAGS += -std=c++11
 }
 

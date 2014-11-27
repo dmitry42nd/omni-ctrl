@@ -1,8 +1,13 @@
 #pragma once
 #include <trikControl/brick.h>
 #include <QTimer>
+#include <QElapsedTimer>
+
+#include "fixed.h"
 
 using namespace trikControl;
+
+typedef FP<18> fixed16;
 
 class Segway : public QObject
 {
@@ -18,12 +23,15 @@ private slots:
   void onGamepadPadUp(int pd);
   void onGamepadBtnChanged(int code, int state);
   
-  void startDriftAcc();
-  void stopDriftAcc();
+  void startDriftAccumulation();
+  void stopDriftAccumulation();
+  void accumulateDrift();
+
   void startDancing();
-  
-  void accDrift();
   void dance();
+
+  void startUpdatingBC();  
+  void updateBC();
   
 //signals:
 
@@ -31,26 +39,26 @@ private:
   Brick  m_brick;
   QTimer m_mainTicker;
   QTimer m_gdcTicker; //Gyro (zero) drift controller
+  QTimer m_bcTicker;
+  QElapsedTimer m_dbgTicker;
+  
+  double m_bc; //battery coeff
   
   double m_acceData;
   double m_gyroData;
   double m_outData;
   double m_outDataOld;
 
-/*
-  1 - pk, dk
-  2 - pk, ik
-  3 - rowrow
-*/
-  double m_rowrow;
-  double m_wewwew;
-  int m_state;  
+  double m_fbControl;
+  double m_rlControl;
   
+  enum {PID_CONTROL1, PID_CONTROL2, MOVEMENT_CONTROL} m_state;  
   double m_pk;
   double m_dk;
   double m_ik;
 
-  double m_offset;  
+  double m_offset;
+  fixed16 m_offsetF;    
   int m_gyroGain;
   int m_gyroDrift;
   int m_gyroDriftCnt;

@@ -10,21 +10,18 @@ const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
 const QString l = "M3";
 const QString r = "M4";
 
-
-const double pk = 8.5;
-const double dk = 12;
-const double ik = 1;
-
 const int gyroAxis = 0;
 const int acceAxis = 2;
 
 const double G = 4096;
-const double K = 0.02; //0.02 
+const double K = 0.02;
+
+const double fullBattery = 12.7;
 
 const int gdcPeriod  = 4000;
 const int mainPeriod = 10;
 
-const int minPow = 5;
+const int minPow = 2;
 
 const double mainPeriodS = mainPeriod/1000.f;
 const double parToDeg    = 0.07;
@@ -38,103 +35,68 @@ Segway::~Segway() {}
 
 Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath):
   m_brick(*guiThread, configPath, startDirPath),
-  m_outData(),
-  m_outDataOld(),
-  m_offset(2.9),
-  m_state(1),
-  m_pk(6.5),
+  m_bc(1),
+  m_outData(0),
+  m_outDataOld(0),
+  m_fbControl(0),
+  m_rlControl(0),
+  m_state(PID_CONTROL1),
+  m_pk(7.2),
   m_dk(11.2),
-  m_ik(0.2),
-  m_rowrow(0)
+  m_ik(1.0),
+  m_offset(2.9),
+  m_offsetF(4096)
 {
   qDebug() << "SEGWAY_STARTS";
   connect(m_brick.keys(), SIGNAL(buttonPressed(int,int)), this, SLOT(onBtnPressed(int,int)));
-  
-  connect(m_brick.keys(), SIGNAL(buttonPressed(int,int)), this, SLOT(onBtnPressed(int,int)));
-  
-  connect(m_brick.gamepad(), SIGNAL(button(int,int)), this, SLOT(onGamepadBtnChanged(int, int)));
+ 
+  connect(m_brick.gamepad(), SIGNAL(button(int,int)),  this, SLOT(onGamepadBtnChanged(int, int)));
   connect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), this, SLOT(onGamepadPadDown(int,int,int)));
   connect(m_brick.gamepad(), SIGNAL(padUp(int)),       this, SLOT(onGamepadPadUp(int)));
 
-  startDriftAcc();
-  QTimer::singleShot(gdcPeriod     , this, SLOT(stopDriftAcc()));
+  startUpdatingBC();  
+  startDriftAccumulation();
+  QTimer::singleShot(gdcPeriod,      this, SLOT(stopDriftAccumulation()));
   QTimer::singleShot(gdcPeriod + 10, this, SLOT(startDancing()));
 }
 
-
-void Segway::onGamepadPadDown(int pd ,int x, int y) 
+void Segway::startUpdatingBC()
 {
-  if(m_state == 3)
-    if(pd == 1)
-      m_rowrow = y/50.0;
-      m_wewwew = x/10.0;
-  else {
-    if (pd == 1)
-      m_pk += x >= 0 ? 0.1 : -0.1;
-    else //if (pd == 2)
-      switch(m_state) {
-        case 1: m_dk += x >= 0 ? 0.1 : -0.1; break;
-        case 2: m_ik += x >= 0 ? 0.1 : -0.1; break;
-      }
-  }
-
-
-void Segway::onGamepadPadUp(int pd) 
-{
-  if(pd == 1)
-    m_rowrow = 0;
-    m_wewwew = 0;
+  m_bc = 1;  
+  connect(&m_bcTicker, SIGNAL(timeout()), this, SLOT(updateBC()));
+  m_bcTicker.start(5000);
 }
 
-void Segway::onGamepadBtnChanged(int code, int state)
+void Segway::updateBC()
 {
-  if (state == 0) return;
-  
-  switch(code) {
-    case 1 : m_state = 1; break;
-    case 2 : m_state = 2; break;
-    case 3 : m_state = 3; break;
-    default : break;
-  }
+  m_bc = fullBattery / m_brick.battery()->readVoltage();
 }
 
-void Segway::onBtnPressed(int code, int state)
-{
-  if(state == 0) return;
-  
-  switch(code) {
-    case 104:
-      m_offset = 0;
-    case 105:
-      m_offset = m_outData;
-    default : break;
-  }
-}
 
-void Segway::startDriftAcc()
+void Segway::startDriftAccumulation()
 {
   qDebug() << "START_DRIFT_ACCUMULATION";
 
-  m_gyroDrift     = 0;  
-  m_gyroDriftCnt  = 0;
-  m_gyroGain = 0;
-  connect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(accDrift()));
+  m_gyroDrift    = 0;  
+  m_gyroDriftCnt = 0;
+  m_gyroGain     = 0;
+  
+  connect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(accumulateDrift()));
   m_mainTicker.start(mainPeriod);
 }
 
-void Segway::stopDriftAcc()
+void Segway::stopDriftAccumulation()
 {
   qDebug() << "STOP_DRIFT_ACCUMULATION";
   
   m_mainTicker.stop();
-  disconnect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(accDrift()));
+  disconnect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(accumulateDrift()));
 
   m_gyroDrift /= m_gyroDriftCnt;
-  
   qDebug() << "gyro[0] drif is: " << m_gyroDrift << " gain is: " << m_gyroGain;
 }
 
-void Segway::accDrift()
+void Segway::accumulateDrift()
 {
   int gd = m_brick.gyroscope()->read()[gyroAxis];
   m_gyroDrift += gd;
@@ -150,20 +112,108 @@ void Segway::startDancing()
 
 void Segway::dance()
 {
+//  qDebug() << m_dbgTicker.elapsed();
+//  m_dbgTicker.restart();
+
   int gyroData = m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift;
+  m_gyroData   = gyroData*parToDeg*mainPeriodS;
+    
   int acceData = m_brick.accelerometer()->read()[acceAxis];
- 
-  m_gyroData = gyroData*parToDeg*mainPeriodS;
-  m_acceData  = acceData*(180/3.14159*G);
+  m_acceData   = acceData*180.0/(3.14159*G); //asin(sat(acceData/G,1))*180.0/3.14159;
   
-  m_outData = ((1-K)*(m_outData + m_gyroData) + K*m_acceData);
-  double tmp = m_outData - m_offset;
-  double tmp2 = tmp + m_rowrow;
-  int yaw  = 2*(tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*ik);
+  m_outData   = ((1-K)*(m_outData + m_gyroData) + K*m_acceData);
+  double tmp  = m_outData - m_offset;
+  double tmp2 = tmp + m_fbControl;
+
+  int yaw = m_bc*(abs(tmp2)*minPow + 2*(tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*m_ik));
   m_outDataOld = tmp;
 
-  m_brick.motor(l)->setPower(yaw+m_wewwew);
-  m_brick.motor(r)->setPower(yaw-m_wewwew);
+  if (abs(yaw) < 110) {
+    m_brick.motor(l)->setPower(yaw+m_rlControl);
+    m_brick.motor(r)->setPower(yaw-m_rlControl);
+  } else {
+    m_brick.motor(l)->setPower(0);
+    m_brick.motor(r)->setPower(0);
+//  }
 
-  qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f rr: %1.2f\n", tmp, yaw, m_pk, m_dk, m_ik,m_rowrow);
+//  qDebug() << m_brick.battery()->readVoltage();
+//  qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f rr: %1.2f bc: %1.2f", tmp, yaw, m_pk, m_dk, m_ik, m_fbControl, m_bc);
+//  qDebug("pdi: %1.1f %1.1f %1.1f", m_pk, m_dk, m_ik);
+    qDebug("yaw: %1.1f", tmp2);
+}
+
+
+//controls
+void Segway::onGamepadPadDown(int pd ,int x, int y) 
+{
+  if (pd == 1) 
+    switch (m_state) {
+      case MOVEMENT_CONTROL: 
+        m_fbControl = y/100.0; 
+        m_rlControl = x/3.0;
+        break;
+      case PID_CONTROL1: 
+        m_pk += x >= 0 ? 0.1 : -0.1;
+        break;
+      case PID_CONTROL2:
+        m_pk += x >= 0 ? 0.1 : -0.1;
+        break;
+    }
+  else
+    switch (m_state) {
+      case MOVEMENT_CONTROL: 
+        break;
+      case PID_CONTROL1: 
+        m_dk += x >= 0 ? 0.1 : -0.1; 
+        break;
+      case PID_CONTROL2:
+        m_ik += x >= 0 ? 0.1 : -0.1; 
+        break;
+    }
+}
+
+void Segway::onGamepadPadUp(int pd) 
+{
+  if (pd == 1) 
+    switch (m_state) {
+      case MOVEMENT_CONTROL: 
+        m_fbControl = 0; 
+        m_rlControl = 0;
+        break;
+      case PID_CONTROL1: 
+      case PID_CONTROL2:
+        break;
+    }
+  else
+    switch (m_state) {
+      case MOVEMENT_CONTROL: 
+      case PID_CONTROL1: 
+      case PID_CONTROL2:
+        break;
+    }
+}
+
+void Segway::onGamepadBtnChanged(int code, int state)
+{
+  if (state == 0) return;
+  
+  switch(code) {
+    case 1 : m_state = PID_CONTROL1; break;
+    case 2 : m_state = PID_CONTROL2; break;
+    case 3 : m_state = MOVEMENT_CONTROL; break;
+    default : break;
+  }
+}
+
+void Segway::onBtnPressed(int code, int state)
+{
+  if(state == 0) return;
+  
+  switch(code) {
+    case 104:
+      m_offset = 0;
+    case 105:
+      m_offset = m_outData;
+    default : break;
+  }
 }
