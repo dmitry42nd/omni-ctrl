@@ -3,11 +3,7 @@
 #include <QTimer>
 #include <QElapsedTimer>
 
-#include "fixed.h"
-
 using namespace trikControl;
-
-typedef FP<18> fixed16;
 
 class Segway : public QObject
 {
@@ -58,7 +54,8 @@ private:
   double m_ik;
 
   double m_offset;
-  fixed16 m_offsetF;    
+  
+  int m_cnt;
   int m_gyroGain;
   int m_gyroDrift;
   int m_gyroDriftCnt;

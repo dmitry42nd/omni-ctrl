@@ -14,14 +14,14 @@ const int gyroAxis = 0;
 const int acceAxis = 2;
 
 const double G = 4096;
-const double K = 0.02;
+const double K = 0.022;
 
 const double fullBattery = 12.7;
 
 const int gdcPeriod  = 4000;
-const int mainPeriod = 10;
+const int mainPeriod = 8;
 
-const int minPow = 10;
+const int minPow = 5;
 
 const double mainPeriodS = mainPeriod/1000.f;
 const double parToDeg    = 0.07;
@@ -45,7 +45,7 @@ Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath):
   m_dk(11.2),
   m_ik(1.0),
   m_offset(2.9),
-  m_offsetF(4096)
+  m_cnt(0)
 {
   qDebug() << "SEGWAY_STARTS";
   connect(m_brick.keys(), SIGNAL(buttonPressed(int,int)), this, SLOT(onBtnPressed(int,int)));
@@ -107,28 +107,25 @@ void Segway::accumulateDrift()
 void Segway::startDancing()
 {
   connect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(dance()));
+  m_dbgTicker.restart();
   m_mainTicker.start(mainPeriod);
 }
 
 void Segway::dance()
 {
-//  qDebug() << m_dbgTicker.elapsed();
-//  m_dbgTicker.restart();
+  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
 
-  int gyroData = m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift;
-  m_gyroData   = gyroData*parToDeg*mainPeriodS;
-    
-  int acceData = m_brick.accelerometer()->read()[acceAxis];
-  m_acceData   = acceData*180.0/(3.14159*G); //asin(sat(acceData/G,1))*180.0/3.14159;
+  double gyroData  = (m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift)*m_dbgTicker.elapsed()*parToDeg/1000.0;
+  m_dbgTicker.restart();
   
-  m_outData   = ((1-K)*(m_outData + m_gyroData) + K*m_acceData);
+  m_outData   = (1-K)*(m_outData + gyroData) + K*acceData;
   double tmp  = m_outData - m_offset;
   double tmp2 = tmp + m_fbControl;
 
   int yaw = m_bc*(sgn(tmp2)*minPow + 2*(tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*m_ik));
-  m_outDataOld = tmp;
+  m_outDataOld = tmp; 
 
-  if (abs(yaw) < 110) {
+  if (abs(yaw) < 200) {
     m_brick.motor(l)->setPower(yaw+m_rlControl);
     m_brick.motor(r)->setPower(yaw-m_rlControl);
   } else {
@@ -136,10 +133,11 @@ void Segway::dance()
     m_brick.motor(r)->setPower(0);
   }
 
-//  qDebug() << m_brick.battery()->readVoltage();
-//  qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f rr: %1.2f bc: %1.2f", tmp, yaw, m_pk, m_dk, m_ik, m_fbControl, m_bc);
-//  qDebug("pdi: %1.1f %1.1f %1.1f", m_pk, m_dk, m_ik);
-    qDebug("yaw: %1.1f", tmp2);
+  if (m_cnt == 10) {
+    qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f rr: %1.2f bc: %1.2f", tmp, yaw, m_pk, m_dk, m_ik, m_fbControl, m_bc);
+    m_cnt = 0;
+  }
+  m_cnt++;
 }
 
 
