@@ -21,7 +21,7 @@ const double fullBattery = 12.7;
 const int gdcPeriod  = 4000;
 const int mainPeriod = 10;
 
-const int minPow = 2;
+const int minPow = 10;
 
 const double mainPeriodS = mainPeriod/1000.f;
 const double parToDeg    = 0.07;
@@ -125,7 +125,7 @@ void Segway::dance()
   double tmp  = m_outData - m_offset;
   double tmp2 = tmp + m_fbControl;
 
-  int yaw = m_bc*(abs(tmp2)*minPow + 2*(tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*m_ik));
+  int yaw = m_bc*(sgn(tmp2)*minPow + 2*(tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*m_ik));
   m_outDataOld = tmp;
 
   if (abs(yaw) < 110) {
@@ -134,7 +134,7 @@ void Segway::dance()
   } else {
     m_brick.motor(l)->setPower(0);
     m_brick.motor(r)->setPower(0);
-//  }
+  }
 
 //  qDebug() << m_brick.battery()->readVoltage();
 //  qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f rr: %1.2f bc: %1.2f", tmp, yaw, m_pk, m_dk, m_ik, m_fbControl, m_bc);
