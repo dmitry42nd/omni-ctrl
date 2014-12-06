@@ -33,7 +33,7 @@ inline double sat(double a, double b) { return abs(a) > b ? sgn(a) * b : a; }
 
 Segway::~Segway() {}  
 
-Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath):
+Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath, pk, dk, ik):
   m_brick(*guiThread, configPath, startDirPath),
   m_bc(1),
   m_outData(0),
@@ -41,9 +41,9 @@ Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath):
   m_fbControl(0),
   m_rlControl(0),
   m_state(PID_CONTROL1),
-  m_pk(7.2),
-  m_dk(11.2),
-  m_ik(1.0),
+  m_pk(pk),
+  m_dk(dk),
+  m_ik(ik),
   m_offset(2.9),
   m_cnt(0)
 {

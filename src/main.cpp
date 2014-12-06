@@ -10,6 +10,9 @@ int main(int argc, char *argv[])
 
     QString configPath = "./";
     QString startDirPath = "./";
+    double pk = 7.2;
+    double dk = 11.2;
+    double ik = 1.0;
     
     if (app.arguments().contains("-c")) {
       int const index = app.arguments().indexOf("-c");
@@ -22,6 +25,18 @@ int main(int argc, char *argv[])
         configPath += "/";
       }
     }
+    if (app.arguments().contains("-pk")) {
+      int const index = app.arguments().indexOf("-pk");
+      if (app.arguments().count() <= index + 1) {
+        return 1;
+      }
+
+      configPath = app.arguments()[index + 1];
+      if (configPath.right(1) != "/") {
+        configPath += "/";
+      }
+    }
+    
     if (app.arguments().contains("-h") || app.arguments().contains("--help")) {
       qDebug() << "Flags:";
       
@@ -31,7 +46,7 @@ int main(int argc, char *argv[])
       return 0;
     }
 
-    Segway robot(app.thread(), configPath, startDirPath);
+    Segway robot(app.thread(), configPath, startDirPath, pk, dk, ik);
 
     return app.exec();
 }
