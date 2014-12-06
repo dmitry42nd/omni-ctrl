@@ -14,7 +14,7 @@ const int gyroAxis = 0;
 const int acceAxis = 2;
 
 const double G = 4096;
-const double K = 0.022;
+const double K = 0.025;
 
 const double fullBattery = 12.7;
 
@@ -33,7 +33,7 @@ inline double sat(double a, double b) { return abs(a) > b ? sgn(a) * b : a; }
 
 Segway::~Segway() {}  
 
-Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath, pk, dk, ik):
+Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath, double pk, double dk, double ik):
   m_brick(*guiThread, configPath, startDirPath),
   m_bc(1),
   m_outData(0),
@@ -122,6 +122,7 @@ void Segway::dance()
   double tmp  = m_outData - m_offset;
   double tmp2 = tmp + m_fbControl;
 
+  
   int yaw = m_bc*(sgn(tmp2)*minPow + 2*(tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*m_ik));
   m_outDataOld = tmp; 
 

@@ -9,11 +9,8 @@ class Segway : public QObject
 {
   Q_OBJECT
 
-  m_pk(7.2),
-  m_dk(11.2),
-  m_ik(1.0),
-
 public:
+//  explicit Segway(QThread *guiThread, QString configPath, QString startDirPath);
   explicit Segway(QThread *guiThread, QString configPath, QString startDirPath, double pk, double dk, double ik);
   virtual ~Segway();
 
