@@ -50,6 +50,7 @@ private:
   double m_rlControl;
   
   enum {PID_CONTROL1, PID_CONTROL2, MOVEMENT_CONTROL} m_state;  
+  double m_k;
   double m_pk;
   double m_dk;
   double m_ik;

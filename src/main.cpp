@@ -10,9 +10,9 @@ int main(int argc, char *argv[])
 
     QString configPath = "./";
     QString startDirPath = "./";
-    double pk = 7.2;
-    double dk = 11.2;
-    double ik = 1.0;
+    double pk = 14.2;
+    double dk = 17.7;
+    double ik = 1.9;
     
     if (app.arguments().contains("-c")) {
       int const index = app.arguments().indexOf("-c");

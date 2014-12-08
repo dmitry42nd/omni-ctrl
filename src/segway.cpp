@@ -14,18 +14,17 @@ const int gyroAxis = 0;
 const int acceAxis = 2;
 
 const double G = 4096;
-const double K = 0.025;
+const double K = 0.007;
 
 const double fullBattery = 12.7;
 
 const int gdcPeriod  = 4000;
-const int mainPeriod = 8;
+const int mainPeriod = 5;
 
 const int minPow = 5;
 
 const double mainPeriodS = mainPeriod/1000.f;
 const double parToDeg    = 0.07;
-const double gyroCoeff   = mainPeriodS*parToDeg;
 
 inline double sgn(double x) { return x > 0 ? 1 : (x < 0 ? -1 : 0); }
 inline double abs(double x) { return x > 0 ? x : -x; }
@@ -47,6 +46,7 @@ Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath, dou
   m_offset(2.9),
   m_cnt(0)
 {
+  m_k = K;
   qDebug() << "SEGWAY_STARTS";
   connect(m_brick.keys(), SIGNAL(buttonPressed(int,int)), this, SLOT(onBtnPressed(int,int)));
  
@@ -113,12 +113,15 @@ void Segway::startDancing()
 
 void Segway::dance()
 {
-  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
-
+//  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
+//  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
+  QVector<int> acc = m_brick.accelerometer()->read();
+  double acceData  = atan2(acc[2],acc[0]) * 180.0/3.14159;
   double gyroData  = (m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift)*m_dbgTicker.elapsed()*parToDeg/1000.0;
+
   m_dbgTicker.restart();
   
-  m_outData   = (1-K)*(m_outData + gyroData) + K*acceData;
+  m_outData   = (1-m_k)*(m_outData + gyroData) + m_k*acceData;
   double tmp  = m_outData - m_offset;
   double tmp2 = tmp + m_fbControl;
 
@@ -135,7 +138,7 @@ void Segway::dance()
   }
 
   if (m_cnt == 10) {
-    qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f rr: %1.2f bc: %1.2f", tmp, yaw, m_pk, m_dk, m_ik, m_fbControl, m_bc);
+    qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f k: %1.3f", tmp, yaw, m_pk, m_dk, m_ik, m_k);
     m_cnt = 0;
   }
   m_cnt++;
@@ -155,7 +158,7 @@ void Segway::onGamepadPadDown(int pd ,int x, int y)
         m_pk += x >= 0 ? 0.1 : -0.1;
         break;
       case PID_CONTROL2:
-        m_pk += x >= 0 ? 0.1 : -0.1;
+        m_k += x >= 0 ? 0.001 : -0.001;
         break;
     }
   else
