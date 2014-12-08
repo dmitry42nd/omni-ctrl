@@ -113,8 +113,7 @@ void Segway::startDancing()
 
 void Segway::dance()
 {
-//  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
-//  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
+  //  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
   QVector<int> acc = m_brick.accelerometer()->read();
   double acceData  = atan2(acc[2],acc[0]) * 180.0/3.14159;
   double gyroData  = (m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift)*m_dbgTicker.elapsed()*parToDeg/1000.0;

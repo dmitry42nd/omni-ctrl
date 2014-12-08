@@ -14,6 +14,8 @@ int main(int argc, char *argv[])
     double dk = 17.7;
     double ik = 1.9;
     
+// pdi: 13.5 17.7 1.9 k: 0.003
+    
     if (app.arguments().contains("-c")) {
       int const index = app.arguments().indexOf("-c");
       if (app.arguments().count() <= index + 1) {
