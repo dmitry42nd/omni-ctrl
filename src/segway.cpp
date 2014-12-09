@@ -14,16 +14,15 @@ const int gyroAxis = 0;
 const int acceAxis = 2;
 
 const double G = 4096;
-const double K = 0.007;
+const double K = 0.003;
 
 const double fullBattery = 12.7;
 
 const int gdcPeriod  = 4000;
-const int mainPeriod = 5;
+const int mainPeriod = 8;
 
 const int minPow = 5;
 
-const double mainPeriodS = mainPeriod/1000.f;
 const double parToDeg    = 0.07;
 
 inline double sgn(double x) { return x > 0 ? 1 : (x < 0 ? -1 : 0); }
@@ -113,10 +112,11 @@ void Segway::startDancing()
 
 void Segway::dance()
 {
-  //  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
   QVector<int> acc = m_brick.accelerometer()->read();
   double acceData  = atan2(acc[2],acc[0]) * 180.0/3.14159;
+//  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
   double gyroData  = (m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift)*m_dbgTicker.elapsed()*parToDeg/1000.0;
+//  qDebug() << acceData << " " << gyroData;
 
   m_dbgTicker.restart();
   
@@ -137,7 +137,7 @@ void Segway::dance()
   }
 
   if (m_cnt == 10) {
-    qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f k: %1.3f", tmp, yaw, m_pk, m_dk, m_ik, m_k);
+    qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f k: %1.5f", tmp, yaw, m_pk, m_dk, m_ik, m_k);
     m_cnt = 0;
   }
   m_cnt++;
