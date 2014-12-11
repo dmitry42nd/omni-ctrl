@@ -10,9 +10,9 @@ int main(int argc, char *argv[])
 
     QString configPath = "./";
     QString startDirPath = "./";
-    double pk = 14.2;
+    double pk = 13.6;
     double dk = 17.7;
-    double ik = 1.9;
+    double ik = 2.0;
     
 // pdi: 13.5 17.7 1.9 k: 0.003
     
