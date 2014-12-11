@@ -6,25 +6,26 @@
 
 const QString logFifoPath="/tmp/dsp-detector.out.fifo";
 const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
-/*
+
 const QString l = "M3";
 const QString r = "M4";
-*/
+
+/*
 const QString l = "M2";
 const QString r = "M1";
-
+*/
 const int gyroAxis = 0;
 const int acceAxis = 2;
 
 const double G = 4096;
-const double K = 0.010;
+const double K = 0.004;
 
 const double fullBattery = 12.7;
 
 const int gdcPeriod  = 4000;
-const int mainPeriod = 6;
+const int mainPeriod = 8;
 
-const int minPow = 5;
+const int minPow = 2;
 
 const double parToDeg = 0.07;
 
@@ -45,7 +46,7 @@ Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath, dou
   m_pk(pk),
   m_dk(dk),
   m_ik(ik),
-  m_offset(2.9),
+  m_offset(3.3),
   m_cnt(0)
 {
   m_k = K;
@@ -121,7 +122,7 @@ void Segway::dance()
   double gyroData  = (m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift)*m_dbgTicker.elapsed()*parToDeg/1000.0;
   m_dbgTicker.restart();
   
-  m_outData   = (1-m_k)*(m_outData + gyroData) + m_k*(acceData);
+  m_outData   = (1-m_k)*(m_outData + gyroData) + m_k*acceData;
   double tmp  = m_outData - m_offset;
   double tmp2 = tmp + m_fbControl;
 
@@ -137,8 +138,7 @@ void Segway::dance()
   }
 
   if (m_cnt == 10) {
-    qDebug("oag: %1.3f %1.3f %1.3f", m_outData,acceData,gyroData);
-//    qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f k: %1.5f", tmp, yaw, m_pk, m_dk, m_ik, m_k);
+    qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f k: %1.5f", tmp, yaw, m_pk, m_dk, m_ik, m_k);
     m_cnt = 0;
   }
   m_cnt++;
@@ -212,7 +212,7 @@ void Segway::onBtnPressed(int code, int state)
   if(state == 0) return;
   
   switch(code) {
-    case 104:
+    case 108:
       m_offset = 0;
     case 105:
       m_offset = m_outData;
