@@ -46,7 +46,7 @@ Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath, dou
   m_pk(pk),
   m_dk(dk),
   m_ik(ik),
-  m_offset(3.3),
+  m_offset(3.4),
   m_cnt(0)
 {
   m_k = K;
@@ -138,6 +138,7 @@ void Segway::dance()
   }
 
   if (m_cnt == 10) {
+//   qDebug("otag: %1.3f %1.3f %1.3f %1.3f", m_outData, tmp, acceData, gyroData);
     qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f k: %1.5f", tmp, yaw, m_pk, m_dk, m_ik, m_k);
     m_cnt = 0;
   }
@@ -153,7 +154,7 @@ void Segway::onGamepadPadDown(int pd ,int x, int y)
       case MOVEMENT_CONTROL: 
         m_fbControl = y/100.0; 
         m_rlControl = x/3.0;
-        break;
+         break;
       case PID_CONTROL1: 
         m_pk += x >= 0 ? 0.1 : -0.1;
         break;

@@ -12,8 +12,9 @@ int main(int argc, char *argv[])
     QString startDirPath = "./";
     double pk = 13.6;
     double dk = 17.7;
-    double ik = 2.0;
+    double ik = 1.9;
     
+// pdi: 13.4 25.1 2.1 k: 0.00400
 // pdi: 13.5 17.7 1.9 k: 0.003
     
     if (app.arguments().contains("-c")) {
