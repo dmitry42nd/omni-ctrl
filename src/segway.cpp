@@ -1,55 +1,47 @@
 #include <QDebug>
 #include <QVector>
-
 #include <math.h>
 #include "segway.h"
 
-const QString logFifoPath="/tmp/dsp-detector.out.fifo";
-const QString cmdFifoPath="/tmp/dsp-detector.in.fifo";
-
 const QString l = "M3";
 const QString r = "M4";
-
-/*
-const QString l = "M2";
-const QString r = "M1";
-*/
-const int gyroAxis = 0;
-const int acceAxis = 2;
-
-const double G = 4096;
-const double K = 0.0048;
+const QString le = "B3";
+const QString re = "B4";
 
 const double fullBattery = 12.7;
-
+const double parToDeg = 0.07;
 const int gdcPeriod  = 4000;
 const int mainPeriod = 8;
-
 const int minPow = 2;
-
-const double parToDeg = 0.07;
 
 inline double sgn(double x) { return x > 0 ? 1 : (x < 0 ? -1 : 0); }
 inline double abs(double x) { return x > 0 ? x : -x; }
 inline double sat(double a, double b) { return abs(a) > b ? sgn(a) * b : a; }
 
-Segway::~Segway() {}  
+Segway::~Segway() {
+  disconnectAll();
+  m_brick.stop();
+}  
 
-Segway::Segway(QThread *guiThread, QString configPath, QString startDirPath, double pk, double dk, double ik):
-  m_brick(*guiThread, configPath, startDirPath),
-  m_bc(1),
-  m_outData(0),
-  m_outDataOld(0),
-  m_fbControl(0),
-  m_rlControl(0),
+Segway::Segway(QApplication *app, 
+               QString configPath, QString startDirPath, 
+               double pk, double dk, double ik, double ck, double ofs,
+               int accGAxis, int accOAxis, int gyroAxis):
+  m_app(app),
+  m_brick(*(app->thread()), configPath, startDirPath),
+  m_fbControl(),
+  m_rlControl(),
   m_state(PID_CONTROL1),
   m_pk(pk),
   m_dk(dk),
   m_ik(ik),
-  m_offset(3.4),
-  m_cnt(0)
+  m_ck(ck),
+  m_offset(ofs),
+  m_accGAxis(accGAxis),
+  m_accOAxis(accOAxis),
+  m_gyroAxis(gyroAxis),
+  m_cnt()
 {
-  m_k = K;
   qDebug() << "SEGWAY_STARTS";
   connect(m_brick.keys(), SIGNAL(buttonPressed(int,int)), this, SLOT(onBtnPressed(int,int)));
  
@@ -75,14 +67,12 @@ void Segway::updateBC()
   m_bc = fullBattery / m_brick.battery()->readVoltage();
 }
 
-
 void Segway::startDriftAccumulation()
 {
   qDebug() << "START_DRIFT_ACCUMULATION";
 
   m_gyroDrift    = 0;  
   m_gyroDriftCnt = 0;
-  m_gyroGain     = 0;
   
   connect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(accumulateDrift()));
   m_mainTicker.start(mainPeriod);
@@ -96,19 +86,24 @@ void Segway::stopDriftAccumulation()
   disconnect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(accumulateDrift()));
 
   m_gyroDrift /= m_gyroDriftCnt;
-  qDebug() << "gyro[0] drif is: " << m_gyroDrift << " gain is: " << m_gyroGain;
+  qDebug() << "gyro[0] drift is: " << m_gyroDrift;
 }
 
 void Segway::accumulateDrift()
 {
-  int gd = m_brick.gyroscope()->read()[gyroAxis];
+  int gd = m_brick.gyroscope()->read()[m_gyroAxis];
   m_gyroDrift += gd;
-  m_gyroGain = abs(gd) > m_gyroGain ? abs(gd) : m_gyroGain;
   m_gyroDriftCnt++;
 }
 
 void Segway::startDancing()
 {
+  qDebug() << "START_DANCING";
+  m_outData    = 0;
+  m_outDataOld = 0;
+  m_brick.encoder(le)->reset();
+  m_brick.encoder(re)->reset();
+  
   connect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(dance()));
   m_dbgTicker.restart();
   m_mainTicker.start(mainPeriod);
@@ -116,35 +111,49 @@ void Segway::startDancing()
 
 void Segway::dance()
 {
+ 
   QVector<int> acc = m_brick.accelerometer()->read();
-  double acceData  = atan2(acc[2],acc[0]) * 180.0/3.14159;
-//  double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*G);
-  double gyroData  = (m_brick.gyroscope()->read()[gyroAxis] - m_gyroDrift)*m_dbgTicker.elapsed()*parToDeg/1000.0;
+  double acceData  = atan2(acc[m_accOAxis],acc[m_accGAxis]) * 180.0/3.14159;
+//or double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*4096);
+  double gyroData  = (m_brick.gyroscope()->read()[m_gyroAxis] - m_gyroDrift)*m_dbgTicker.elapsed()*parToDeg/1000.0;
   m_dbgTicker.restart();
   
-  m_outData   = (1-m_k)*(m_outData + gyroData) + m_k*acceData;
-  double tmp  = m_outData - m_offset;
-  double tmp2 = tmp + m_fbControl;
+  m_outData     = (1 - m_ck)*(m_outData + gyroData) + m_ck*acceData;
+  double angle  = m_outData - m_offset;
+  double tmp2 = angle + m_fbControl;
 
-  int yaw = m_bc*(sgn(tmp2)*minPow + 2*(tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*m_ik));
-  m_outDataOld = tmp; 
+  int yaw = m_bc*(sgn(tmp2)*minPow + tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*m_ik);
+  m_outDataOld = angle; 
 
-  if (abs(yaw) < 200) {
-    m_brick.motor(l)->setPower(yaw+m_rlControl);
-    m_brick.motor(r)->setPower(yaw-m_rlControl);
+  if (abs(angle) < 45) {
+    m_brick.motor(l)->setPower(yaw + m_rlControl);
+    m_brick.motor(r)->setPower(yaw - m_rlControl);
   } else {
     m_brick.motor(l)->setPower(0);
     m_brick.motor(r)->setPower(0);
   }
 
+
   if (m_cnt == 10) {
-//   qDebug("otag: %1.3f %1.3f %1.3f %1.3f", m_outData, tmp, acceData, gyroData);
-    qDebug("data yaw: %1.5f %d pdi: %1.1f %1.1f %1.1f k: %1.5f", tmp, yaw, m_pk, m_dk, m_ik, m_k);
+    qDebug("angle speed: %1.5f %d encoder l r: %d %d", angle, yaw, m_brick.encoder(le)->readRawData(), -m_brick.encoder(re)->readRawData());
     m_cnt = 0;
   }
   m_cnt++;
+
 }
 
+void Segway::disconnectAll() 
+{
+  disconnect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(accumulateDrift()));
+  disconnect(&m_mainTicker, SIGNAL(timeout()), this, SLOT(dance()));
+  disconnect(m_brick.keys(), SIGNAL(buttonPressed(int,int)), this, SLOT(onBtnPressed(int,int)));
+ 
+  disconnect(m_brick.gamepad(), SIGNAL(button(int,int)),  this, SLOT(onGamepadBtnChanged(int, int)));
+  disconnect(m_brick.gamepad(), SIGNAL(pad(int,int,int)), this, SLOT(onGamepadPadDown(int,int,int)));
+  disconnect(m_brick.gamepad(), SIGNAL(padUp(int)),       this, SLOT(onGamepadPadUp(int)));
+
+  disconnect(&m_bcTicker, SIGNAL(timeout()), this, SLOT(updateBC()));
+}
 
 //controls
 void Segway::onGamepadPadDown(int pd ,int x, int y) 
@@ -159,7 +168,7 @@ void Segway::onGamepadPadDown(int pd ,int x, int y)
         m_pk += x >= 0 ? 0.1 : -0.1;
         break;
       case PID_CONTROL2:
-        m_k += x >= 0 ? 0.001 : -0.001;
+        m_ck += x >= 0 ? 0.001 : -0.001;
         break;
     }
   else
@@ -214,10 +223,10 @@ void Segway::onBtnPressed(int code, int state)
   
   switch(code) {
     case 103:
-      m_brick.stop();
-      exit(0);
+      m_app->quit();
     case 108:
-      m_offset = 0;
+      m_brick.encoder(le)->reset();
+      m_brick.encoder(re)->reset();
     case 105:
       m_offset = m_outData;
     default : break;

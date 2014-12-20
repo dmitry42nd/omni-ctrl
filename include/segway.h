@@ -1,5 +1,6 @@
 #pragma once
 #include <trikControl/brick.h>
+#include <QtGui/QApplication>
 #include <QTimer>
 #include <QElapsedTimer>
 
@@ -11,10 +12,14 @@ class Segway : public QObject
 
 public:
 //  explicit Segway(QThread *guiThread, QString configPath, QString startDirPath);
-  explicit Segway(QThread *guiThread, QString configPath, QString startDirPath, double pk, double dk, double ik);
+  Segway(QApplication *app, 
+         QString configPath, QString startDirPath, 
+         double pk, double dk, double ik, double ck, double ofs,
+         int accGAxis, int accOAxis, int gyroAxis);
   virtual ~Segway();
 
 private slots:
+  void disconnectAll();
   void onBtnPressed(int code, int state);
   void onGamepadPadDown(int pd ,int x, int y);
   void onGamepadPadUp(int pd);
@@ -33,6 +38,7 @@ private slots:
 //signals:
 
 private:
+  QApplication* m_app;
   Brick  m_brick;
   QTimer m_mainTicker;
   QTimer m_gdcTicker; //Gyro (zero) drift controller
@@ -41,24 +47,25 @@ private:
   
   double m_bc; //battery coeff
   
-  double m_acceData;
-  double m_gyroData;
   double m_outData;
   double m_outDataOld;
 
   double m_fbControl;
   double m_rlControl;
   
-  enum {PID_CONTROL1, PID_CONTROL2, MOVEMENT_CONTROL} m_state;  
-  double m_k;
+  enum { PID_CONTROL1, PID_CONTROL2, MOVEMENT_CONTROL } m_state;  
   double m_pk;
   double m_dk;
   double m_ik;
+  double m_ck;
 
   double m_offset;
+
+  int m_accGAxis;
+  int m_accOAxis;
+  int m_gyroAxis;
   
   int m_cnt;
-  int m_gyroGain;
   int m_gyroDrift;
   int m_gyroDriftCnt;
 };
