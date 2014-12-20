@@ -18,7 +18,7 @@ const int gyroAxis = 0;
 const int acceAxis = 2;
 
 const double G = 4096;
-const double K = 0.004;
+const double K = 0.0048;
 
 const double fullBattery = 12.7;
 
@@ -213,6 +213,9 @@ void Segway::onBtnPressed(int code, int state)
   if(state == 0) return;
   
   switch(code) {
+    case 103:
+      m_brick.stop();
+      exit(0);
     case 108:
       m_offset = 0;
     case 105:
