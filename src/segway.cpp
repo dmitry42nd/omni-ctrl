@@ -120,9 +120,9 @@ void Segway::dance()
   
   m_outData     = (1 - m_ck)*(m_outData + gyroData) + m_ck*acceData;
   double angle  = m_outData - m_offset;
-  double tmp2 = angle + m_fbControl;
+  double leverage = angle + m_fbControl;
 
-  int yaw = m_bc*(sgn(tmp2)*minPow + tmp2*m_pk + (tmp2-m_outDataOld)*m_dk + (tmp2+m_outDataOld)*m_ik);
+  int yaw = m_bc*(sgn(leverage)*minPow + leverage*m_pk + (leverage-m_outDataOld)*m_dk + (leverage+m_outDataOld)*m_ik);
   m_outDataOld = angle; 
 
   if (abs(angle) < 45) {
@@ -161,7 +161,7 @@ void Segway::onGamepadPadDown(int pd ,int x, int y)
   if (pd == 1) 
     switch (m_state) {
       case MOVEMENT_CONTROL: 
-        m_fbControl = y/100.0; 
+        m_fbControl = y/200.0; 
         m_rlControl = x/3.0;
          break;
       case PID_CONTROL1: 
