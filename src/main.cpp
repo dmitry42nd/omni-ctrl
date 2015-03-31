@@ -8,7 +8,8 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QString configPath = "./";
+    QString systemConfigPath = "./";
+    QString modelConfigPath = "./";
     QString startDirPath = "./";
     double pk = 25.0;
     double dk = 49.2;
@@ -24,15 +25,27 @@ int main(int argc, char *argv[])
     int accOAxis = 2;
     int gyroAxis = 0;
     
-    if (app.arguments().contains("-c")) {
-      int const index = app.arguments().indexOf("-c");
+    if (app.arguments().contains("-s")) {
+      int const index = app.arguments().indexOf("-s");
       if (app.arguments().count() <= index + 1) {
         return 1;
       }
 
-      configPath = app.arguments()[index + 1];
-      if (configPath.right(1) != "/") {
-        configPath += "/";
+      systemConfigPath = app.arguments()[index + 1];
+      if (systemConfigPath.right(1) != "/") {
+        systemConfigPath += "/";
+      }
+    }
+    
+    if (app.arguments().contains("-m")) {
+      int const index = app.arguments().indexOf("-m");
+      if (app.arguments().count() <= index + 1) {
+        return 1;
+      }
+
+      modelConfigPath = app.arguments()[index + 1];
+      if (modelConfigPath.right(1) != "/") {
+        modelConfigPath += "/";
       }
     }
     
@@ -43,8 +56,8 @@ int main(int argc, char *argv[])
       }
 
       startDirPath = app.arguments()[index + 1];
-      if (configPath.right(1) != "/") {
-        configPath += "/";
+      if (startDirPath.right(1) != "/") {
+        startDirPath += "/";
       }
     }
     
@@ -94,7 +107,8 @@ int main(int argc, char *argv[])
     
     if (app.arguments().contains("-h") || app.arguments().contains("--help")) {
       qDebug() << "Flags:";
-      qDebug() << "-c   - set path to config file";
+      qDebug() << "-s   - set path to system config file";
+      qDebug() << "-m   - set path to model config file";
       qDebug() << "-d   - set path to start directory";
       qDebug() << "-pk";
       qDebug() << "-ik";
@@ -104,8 +118,8 @@ int main(int argc, char *argv[])
 
       return 0;
     }
-
-    Segway robot(&app, configPath, startDirPath, pk, dk, ik, ck, ofs, accGAxis, accOAxis, gyroAxis);
+    
+    Segway robot(&app, systemConfigPath, modelConfigPath, startDirPath, pk, dk, ik, ck, ofs, accGAxis, accOAxis, gyroAxis);
 
     return app.exec();
 }

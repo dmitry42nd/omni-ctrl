@@ -22,10 +22,11 @@ INCLUDEPATH = \
         $$INCLUDE_DIR \
         $$PWD \
         $$BOOST_DIR \
+	$$TRIKCINTROL_DIR/src \
         $$TRIKCONTROL_DIR/include \
 	$$TRIKKERNEL_DIR/include
 
-LIBS += -L$$TRIKCONTROL_BINDIR -ltrikControl -ltrikKernel
+LIBS += -L$$TRIKCONTROL_BINDIR -ltrikControl -ltrikKernel -lqslog
 
 !macx {
         QMAKE_LFLAGS += -Wl,-O3,-rpath,.

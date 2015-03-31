@@ -1,6 +1,5 @@
 #pragma once
 #include <trikControl/brickInterface.h>
-//#include <src/brick.h>
 #include <QtGui/QApplication>
 #include <QTimer>
 #include <QElapsedTimer>
@@ -14,17 +13,19 @@ class Segway : public QObject
 public:
 //  explicit Segway(QThread *guiThread, QString configPath, QString startDirPath);
   Segway(QApplication *app, 
-         QString configPath, QString startDirPath, 
-         double pk, double dk, double ik, double ck, double ofs,
-         int accGAxis, int accOAxis, int gyroAxis);
+               QString systemConfigPath, QString modelConfigPath, QString startDirPath,
+               double pk, double dk, double ik, double ck, double ofs,
+               int accGAxis, int accOAxis, int gyroAxis);
   virtual ~Segway();
 
 private slots:
   void disconnectAll();
   void onBtnPressed(int code, int state);
+  /*
   void onGamepadPadDown(int pd ,int x, int y);
   void onGamepadPadUp(int pd);
   void onGamepadBtnChanged(int code, int state);
+  */
   
   void startDriftAccumulation();
   void stopDriftAccumulation();
@@ -40,7 +41,7 @@ private slots:
 
 private:
   QApplication* m_app;
-  BrickInterface m_brick;
+  BrickInterface* m_brick;
   QTimer m_mainTicker;
   QTimer m_gdcTicker; //Gyro (zero) drift controller
   QTimer m_bcTicker;
