@@ -11,7 +11,7 @@ const QString re = "B4";
 const double fullBattery = 12.7;
 const double parToDeg = 0.07;
 const int gdcPeriod  = 4000;
-const int mainPeriod = 8;
+const int mainPeriod = 6;
 const int minPow = 2;
 
 inline double sgn(double x) { return x > 0 ? 1 : (x < 0 ? -1 : 0); }
@@ -115,7 +115,8 @@ void Segway::dance()
   QVector<int> acc = m_brick.accelerometer()->read();
   double acceData  = atan2(acc[m_accOAxis],acc[m_accGAxis]) * 180.0/3.14159;
 //or double acceData  = m_brick.accelerometer()->read()[acceAxis] * 180.0/(3.14159*4096);
-  double gyroData  = (m_brick.gyroscope()->read()[m_gyroAxis] - m_gyroDrift)*m_dbgTicker.elapsed()*parToDeg/1000.0;
+  int tmpElapsed = m_dbgTicker.elapsed();
+  double gyroData  = (m_brick.gyroscope()->read()[m_gyroAxis] - m_gyroDrift)*tmpElapsed*parToDeg/1000.0;
   m_dbgTicker.restart();
   
   m_outData     = (1 - m_ck)*(m_outData + gyroData) + m_ck*acceData;
@@ -135,7 +136,8 @@ void Segway::dance()
 
 
   if (m_cnt == 10) {
-    qDebug("angle speed: %1.5f %d encoder l r: %d %d", angle, yaw, m_brick.encoder(le)->readRawData(), -m_brick.encoder(re)->readRawData());
+    //qDebug("angle speed: %1.5f %d encoder l r: %d %d", angle, yaw, m_brick.encoder(le)->readRawData(), -m_brick.encoder(re)->readRawData());
+    qDebug("angle speed: %1.5f elapsed: %d", angle, tmpElapsed);
     m_cnt = 0;
   }
   m_cnt++;

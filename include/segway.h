@@ -1,5 +1,6 @@
 #pragma once
-#include <trikControl/brick.h>
+#include <trikControl/brickInterface.h>
+//#include <src/brick.h>
 #include <QtGui/QApplication>
 #include <QTimer>
 #include <QElapsedTimer>
@@ -39,7 +40,7 @@ private slots:
 
 private:
   QApplication* m_app;
-  Brick  m_brick;
+  BrickInterface m_brick;
   QTimer m_mainTicker;
   QTimer m_gdcTicker; //Gyro (zero) drift controller
   QTimer m_bcTicker;
