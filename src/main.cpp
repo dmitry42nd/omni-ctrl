@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     double pk = 25.0;
     double dk = 49.2;
     double ik = 4.0;
-    double ck = 0.0048;
+    double ck = 0.0044;
     double ofs = 3.4;
 
 // pdi: 12.5 24.6 2.0 k: 0.00420    

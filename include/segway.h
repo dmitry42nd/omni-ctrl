@@ -1,5 +1,6 @@
 #pragma once
 #include <trikControl/brickInterface.h>
+#include <trikNetwork/gamepadInterface.h>
 #include <QtGui/QApplication>
 #include <QTimer>
 #include <QElapsedTimer>
@@ -42,6 +43,7 @@ private slots:
 private:
   QApplication* m_app;
   BrickInterface* m_brick;
+//  GamepadInterface* m_gamepad;
   QTimer m_mainTicker;
   QTimer m_gdcTicker; //Gyro (zero) drift controller
   QTimer m_bcTicker;
@@ -70,4 +72,5 @@ private:
   int m_cnt;
   int m_gyroDrift;
   int m_gyroDriftCnt;
+  double m_rowGyroData;
 };

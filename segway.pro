@@ -1,5 +1,6 @@
 TRIKCONTROL_BINDIR = ../trikRuntime/bin/arm-release
 TRIKCONTROL_DIR = ../trikRuntime/trikControl
+TRIKNETWORK_DIR = ../trikRuntime/trikNetwork
 TRIKKERNEL_DIR = ../trikRuntime/trikKernel
 
 INCLUDE_DIR = include
@@ -22,9 +23,10 @@ INCLUDEPATH = \
         $$INCLUDE_DIR \
         $$PWD \
         $$BOOST_DIR \
-	$$TRIKCINTROL_DIR/src \
+	$$TRIKCONTROL_DIR/src \
         $$TRIKCONTROL_DIR/include \
-	$$TRIKKERNEL_DIR/include
+	$$TRIKKERNEL_DIR/include \
+	$$TRIKNETWORK_DIR/include 
 
 LIBS += -L$$TRIKCONTROL_BINDIR -ltrikControl -ltrikKernel -lqslog
 
