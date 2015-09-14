@@ -11,12 +11,13 @@ int main(int argc, char *argv[])
     QString systemConfigPath = "./";
     QString modelConfigPath = "./";
     QString startDirPath = "./";
-    double pk = 25.0;
-    double dk = 49.2;
-    double ik = 4.0;
-    double ck = 0.0044;
-    double ofs = 3.4;
+    double pk = 20.0;
+    double dk = 50.0;
+    double ik = 10.0;
+    double ck = 0.005;
+    double ofs = 0;
 
+// pdi: 25.0 49.2 4.0 k: 0.0044 ofs: 3.4 
 // pdi: 12.5 24.6 2.0 k: 0.00420    
 // pdi: 13.4 25.1 2.1 k: 0.00400
 // pdi: 13.5 17.7 1.9 k: 0.003

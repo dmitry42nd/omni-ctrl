@@ -22,12 +22,11 @@ public:
 private slots:
   void disconnectAll();
   void onBtnPressed(int code, int state);
-  /*
+/*
   void onGamepadPadDown(int pd ,int x, int y);
   void onGamepadPadUp(int pd);
   void onGamepadBtnChanged(int code, int state);
-  */
-  
+*/  
   void startDriftAccumulation();
   void stopDriftAccumulation();
   void accumulateDrift();
@@ -41,9 +40,11 @@ private slots:
 //signals:
 
 private:
-  QApplication* m_app;
-  BrickInterface* m_brick;
-//  GamepadInterface* m_gamepad;
+  float kalmanCalculate(float newAngle, float newRate,int looptime);
+  
+  QApplication *m_app;
+  BrickInterface *m_brick;
+  //GamepadInterface *m_gamepad;
   QTimer m_mainTicker;
   QTimer m_gdcTicker; //Gyro (zero) drift controller
   QTimer m_bcTicker;
@@ -53,6 +54,7 @@ private:
   
   double m_outData;
   double m_outDataOld;
+  double m_outDataOld2;
 
   double m_fbControl;
   double m_rlControl;
@@ -72,5 +74,4 @@ private:
   int m_cnt;
   int m_gyroDrift;
   int m_gyroDriftCnt;
-  double m_rowGyroData;
 };

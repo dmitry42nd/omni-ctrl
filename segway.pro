@@ -28,7 +28,7 @@ INCLUDEPATH = \
 	$$TRIKKERNEL_DIR/include \
 	$$TRIKNETWORK_DIR/include 
 
-LIBS += -L$$TRIKCONTROL_BINDIR -ltrikControl -ltrikKernel -lqslog
+LIBS += -L$$TRIKCONTROL_BINDIR -ltrikControl -ltrikKernel -ltrikNetwork -lqslog
 
 !macx {
         QMAKE_LFLAGS += -Wl,-O3,-rpath,.
