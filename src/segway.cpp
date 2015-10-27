@@ -1,3 +1,8 @@
+/* 
+  Soldatov Dmitry, 2015
+  Балансирующий робот
+*/
+
 #include <QDebug>
 #include <QVector>
 #include <trikControl/brickFactory.h>
@@ -6,14 +11,21 @@
 #include <unistd.h>
 #include "segway.h"
 
+//Motor ports
 const QString l = "M3";
 const QString r = "M4";
+//Encoder ports (dont used)
 const QString le = "B3";
 const QString re = "B4";
 
 const double fullBattery = 12.7;
 // const double parToDeg = 0.07; //for 2000 dps
 const double parToDeg = 0.0175; //for 500 dps
+/*
+About how to set gyro to 500dps read also:
+https://groups.google.com/a/trikset.com/forum/?hl=en#!topic/dev-pub/Of0Uz9wtP8c
+https://groups.google.com/a/trikset.com/forum/?hl=en#!topic/dev-pub/nvm5mdD9Nr8
+*/
 const int gdcPeriod  = 4000;
 const int mainPeriod = 5; //ms
 const int minPow = 5;
@@ -32,7 +44,6 @@ Segway::Segway(QApplication *app,
                double pk, double dk, double ik, double ck, double ofs,
                int accGAxis, int accOAxis, int gyroAxis):
   m_app(app),
-//  m_brick(*(app->thread()), configPath, startDirPath),
   m_fbControl(),
   m_rlControl(),
   m_state(PID_CONTROL1),
@@ -47,14 +58,14 @@ Segway::Segway(QApplication *app,
   m_cnt()
 {
   m_brick = BrickFactory::create(systemConfigPath, startDirPath);
-//  m_gamepad = GamepadFactory::create(4444);
+
   qDebug() << "SEGWAY_STARTS";
   connect(m_brick->keys(), SIGNAL(buttonPressed(int,int)), this, SLOT(onBtnPressed(int,int)));
 
-  startUpdatingBC();  
-  startDriftAccumulation();
+  startUpdatingBC(); //iterative computing of battery discharge rate
+  startDriftAccumulation(); //computing of gyroscope average drift
   QTimer::singleShot(gdcPeriod,      this, SLOT(stopDriftAccumulation()));
-  QTimer::singleShot(gdcPeriod + 10, this, SLOT(startDancing()));
+  QTimer::singleShot(gdcPeriod + 10, this, SLOT(startDancing())); //balancing main loop
 }
 
 void Segway::startUpdatingBC()
@@ -93,7 +104,7 @@ void Segway::stopDriftAccumulation()
 
 void Segway::accumulateDrift()
 {
-  int gd = m_brick->gyroscope()->read()[m_gyroAxis];
+  int gd = m_brick->gyroscope()->read()[m_gyroAxis]; //gyro read example
   m_gyroDrift   += gd;
   m_gyroDriftCnt++;
 }
@@ -116,19 +127,19 @@ void Segway::startDancing()
 
 void Segway::dance()
 {
-    QVector<int> acc = m_brick->accelerometer()->read();
-    double acceData  = -atan2(acc[m_accOAxis],-acc[m_accGAxis]) * 180.0/3.14159;
+    QVector<int> acc = m_brick->accelerometer()->read(); //accel drift example
+    double acceData  = -atan2(acc[m_accOAxis],-acc[m_accGAxis]) * 180.0/3.14159; //accel rads to degrees
 
     int  tmpElapsed = m_dbgTicker.elapsed();
-    double gyroData = (m_brick->gyroscope()->read()[m_gyroAxis] - m_gyroDrift)*tmpElapsed*parToDeg/1000.0; //ms to s
+    double gyroData = (m_brick->gyroscope()->read()[m_gyroAxis] - m_gyroDrift)*tmpElapsed*parToDeg/1000.0; //ms to s, gyro data in degrees
     m_dbgTicker.restart();
 
-    m_outData     = (1 - m_ck)*(m_outData + gyroData) + m_ck*acceData;
+    m_outData     = (1 - m_ck)*(m_outData + gyroData) + m_ck*acceData; //complementary filter
 //    qDebug("sqr: %1.2f, sqrt: %1.2f, orig: %1.2f", pow(m_outData, 3), m_outData); 
     double angle  = m_outData - m_offset;
-    double leverage = angle + m_fbControl;
+    double leverage = angle + m_fbControl; //TODO: manual control from gamepad
 
-    int yaw = m_bc*(sgn(leverage)*minPow + leverage*m_pk + (leverage-m_outDataOld)*m_dk + (leverage+m_outDataOld+m_outDataOld2)*m_ik);
+    int yaw = m_bc*(sgn(leverage)*minPow + leverage*m_pk + (leverage-m_outDataOld)*m_dk + (leverage+m_outDataOld+m_outDataOld2)*m_ik); //PID for segway
     m_outDataOld2 = m_outDataOld;
     m_outDataOld = angle; 
 
@@ -162,15 +173,15 @@ void Segway::onBtnPressed(int code, int state)
   if(state == 0) return;
   
   switch(code) {
-    case 103:
+    case Qt::Key_Up:
       qDebug("exit");
       m_app->quit();
-    case 108:
+    case Qt::Key_Left:
     /*
       m_brick->encoder(le)->reset();
       m_brick->encoder(re)->reset();
     */
-    case 105:
+    case Qt::Key_Down:
       qDebug("calibrate");
       m_offset = m_outData;
     default : break;
